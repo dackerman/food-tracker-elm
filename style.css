@@ -1,0 +1,12 @@
+body {
+    margin: 0;
+    font-family: 'helvetica';
+}
+
+div {
+    box-sizing: border-box;
+}
+
+body > div {
+    height: 100%;
+}
