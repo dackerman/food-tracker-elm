@@ -13,6 +13,7 @@ import Styles exposing (..)
 import Grid exposing (..)
 import Card exposing (..)
 import FoodJson exposing (..)
+import Foods exposing (..)
 
 type Action = Not
 
@@ -34,10 +35,10 @@ main = Signal.map (\v -> Html.pre [] [Html.text (case v of
 
 main2 = render <| foodsList {foods = []}
 
-foodsList : {foods : List FoodInstance} -> Node
+foodsList : {foods : List Food} -> Node
 foodsList {foods} =
-  let columns = [ { name = "Name", fn = (\{food} -> food.name) }
-                , { name = "Amount", fn = (\{food} -> toString food.amount) }
-                , { name = "Calories", fn = (\instance -> toString <| calories instance) }
+  let columns = [ { name = "Name", fn = (\food -> food.name) }
+                , { name = "Amount", fn = (\food -> toString food.amount) }
+                , { name = "Calories", fn = (\food -> toString <| foodCalories (Dict.empty) food) }
                 ]
   in card [ grid columns foods ]

@@ -3,35 +3,35 @@
     {
       "id": 1,
       "name": "Ground Beef",
-      "calories": 332.1,
+      "nutrition": 332.1,
       "amount": 4,
       "units": "ounces"
     },
     {
       "id": 2,
       "name": "Chicken Breast",
-      "calories": 252,
+      "nutrition": 252,
       "amount": 5,
       "units": "ounces"
     },
     {
       "id": 3,
       "name": "Chipotle Chicken",
-      "calories": 160,
+      "nutrition": 160,
       "amount": 100,
       "units": "grams"
     },
     {
       "id": 4,
       "name": "Chipotle Fajita Vegetables",
-      "calories": 15,
+      "nutrition": 15,
       "amount": 20,
       "units": "grams"
     },
     {
       "id": 5,
       "name": "Chipotle Black Beans",
-      "calories": 120,
+      "nutrition": 120,
       "amount": 60,
       "units": "grams"
     },
@@ -40,7 +40,7 @@
       "name": "Burrito Bowl",
       "amount": 1,
       "units": "container",
-      "foods": [
+      "nutrition": [
         {
           "id": 3,
           "amount": 100,

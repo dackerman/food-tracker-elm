@@ -10817,27 +10817,31 @@ Elm.Card.make = function (_elm) {
    };
    return _elm.Card.values = {_op: _op,card: card};
 };
-Elm.Model = Elm.Model || {};
-Elm.Model.make = function (_elm) {
+Elm.Foods = Elm.Foods || {};
+Elm.Foods.make = function (_elm) {
    "use strict";
-   _elm.Model = _elm.Model || {};
-   if (_elm.Model.values) return _elm.Model.values;
+   _elm.Foods = _elm.Foods || {};
+   if (_elm.Foods.values) return _elm.Foods.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
-   var foodCalories = function (food) {
+   var sum = A2($List.foldl,F2(function (x,y) {    return x + y;}),0);
+   var lookup = F2(function (db,ref) {    return A2($Dict.get,ref.id,db);});
+   var foodCalories = F2(function (db,food) {
       var _p0 = food.nutrition;
-      if (_p0.ctor === "Macros") {
-            return _p0._0.calories;
+      if (_p0.ctor === "Calories") {
+            return _p0._0;
          } else {
-            return A3($List.foldl,F2(function (x,y) {    return x + y;}),0,A2($List.map,foodCalories,_p0._0));
+            var ingredientCalories = function (ref) {    return A2($Maybe.withDefault,0,A2($Maybe.map,foodCalories(db),A2(lookup,db,ref)));};
+            return sum(A2($List.map,ingredientCalories,_p0._0));
          }
-   };
+   });
    var normalized = function (m) {
       var _p1 = m;
       switch (_p1.ctor)
@@ -10848,28 +10852,31 @@ Elm.Model.make = function (_elm) {
          default: return 1 * _p1._0;}
    };
    var ratio = F2(function (mA,mB) {    return normalized(mB) / normalized(mA);});
-   var calories = function (foodInstance) {
-      var food = foodInstance.food;
-      var proportion = A2(ratio,food.amount,foodInstance.amount);
-      var caloriesForFood = foodCalories(food);
-      return proportion * caloriesForFood;
-   };
+   var calories = F2(function (db,eaten) {
+      var calcCalories = function (food) {
+         var caloriesForFood = A2(foodCalories,db,food);
+         var proportion = A2(ratio,food.amount,eaten.food.amount);
+         return proportion * caloriesForFood;
+      };
+      var maybeFood = A2(lookup,db,eaten.food);
+      return A2($Maybe.withDefault,0,A2($Maybe.map,calcCalories,maybeFood));
+   });
    var Container = function (a) {    return {ctor: "Container",_0: a};};
    var Milligrams = function (a) {    return {ctor: "Milligrams",_0: a};};
    var Grams = function (a) {    return {ctor: "Grams",_0: a};};
    var Ounces = function (a) {    return {ctor: "Ounces",_0: a};};
    var Pounds = function (a) {    return {ctor: "Pounds",_0: a};};
-   var Food = F3(function (a,b,c) {    return {name: a,amount: b,nutrition: c};});
-   var Macros = function (a) {    return {ctor: "Macros",_0: a};};
+   var EatenFood = F2(function (a,b) {    return {id: a,food: b};});
+   var FoodRef = F2(function (a,b) {    return {id: a,amount: b};});
+   var Food = F4(function (a,b,c,d) {    return {id: a,name: b,amount: c,nutrition: d};});
    var Recipe = function (a) {    return {ctor: "Recipe",_0: a};};
-   var FoodInstance = F2(function (a,b) {    return {food: a,amount: b};});
-   var Model = F2(function (a,b) {    return {foods: a,currentMonth: b};});
-   return _elm.Model.values = {_op: _op
-                              ,Model: Model
-                              ,FoodInstance: FoodInstance
+   var Calories = function (a) {    return {ctor: "Calories",_0: a};};
+   return _elm.Foods.values = {_op: _op
+                              ,Calories: Calories
                               ,Recipe: Recipe
-                              ,Macros: Macros
                               ,Food: Food
+                              ,FoodRef: FoodRef
+                              ,EatenFood: EatenFood
                               ,Pounds: Pounds
                               ,Ounces: Ounces
                               ,Grams: Grams
@@ -10877,6 +10884,8 @@ Elm.Model.make = function (_elm) {
                               ,Container: Container
                               ,ratio: ratio
                               ,normalized: normalized
+                              ,lookup: lookup
+                              ,sum: sum
                               ,foodCalories: foodCalories
                               ,calories: calories};
 };
@@ -10889,10 +10898,10 @@ Elm.FoodJson.make = function (_elm) {
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Dict = Elm.Dict.make(_elm),
+   $Foods = Elm.Foods.make(_elm),
    $Json$Decode = Elm.Json.Decode.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
-   $Model = Elm.Model.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
@@ -10907,49 +10916,30 @@ Elm.FoodJson.make = function (_elm) {
          var _p3 = _p1._0;
          var _p2 = _p4;
          switch (_p2)
-         {case "pounds": return $Result.Ok($Model.Pounds(_p3));
-            case "ounces": return $Result.Ok($Model.Ounces(_p3));
-            case "grams": return $Result.Ok($Model.Grams(_p3));
-            case "milligrams": return $Result.Ok($Model.Milligrams(_p3));
-            case "container": return $Result.Ok($Model.Container(_p3));
+         {case "pounds": return $Result.Ok($Foods.Pounds(_p3));
+            case "ounces": return $Result.Ok($Foods.Ounces(_p3));
+            case "grams": return $Result.Ok($Foods.Grams(_p3));
+            case "milligrams": return $Result.Ok($Foods.Milligrams(_p3));
+            case "container": return $Result.Ok($Foods.Container(_p3));
             default: return $Result.Err(A2($Basics._op["++"],"Invalid units: ",_p4));}
       };
       return A2($Json$Decode.customDecoder,parseTuple,tryParseAmount);
    }();
-   var indexed = function (food) {
-      var _p5 = food;
-      if (_p5.ctor === "C") {
-            return {ctor: "_Tuple2",_0: _p5._0.id,_1: food};
-         } else {
-            return {ctor: "_Tuple2",_0: _p5._0.id,_1: food};
-         }
-   };
-   var SubIngredientJson = F2(function (a,b) {    return {id: a,amount: b};});
-   var parseSubIngredient = A3($Json$Decode.object2,SubIngredientJson,A2($Json$Decode._op[":="],"id",$Json$Decode.$int),parseAmount);
-   var CompoundFoodJson = F4(function (a,b,c,d) {    return {id: a,name: b,amount: c,items: d};});
-   var IngredientJson = F4(function (a,b,c,d) {    return {id: a,name: b,amount: c,calories: d};});
-   var C = function (a) {    return {ctor: "C",_0: a};};
-   var parseCompoundFood = function () {
+   var indexed = function (food) {    return {ctor: "_Tuple2",_0: food.id,_1: food};};
+   var parseFoodRef = A3($Json$Decode.object2,$Foods.FoodRef,A2($Json$Decode._op[":="],"id",$Json$Decode.$int),parseAmount);
+   var parseNutrition = $Json$Decode.oneOf(_U.list([A2($Json$Decode.map,$Foods.Calories,$Json$Decode.$float)
+                                                   ,A2($Json$Decode.map,$Foods.Recipe,$Json$Decode.list(parseFoodRef))]));
+   var parseFood = function () {
       var food = A5($Json$Decode.object4,
-      CompoundFoodJson,
+      $Foods.Food,
       A2($Json$Decode._op[":="],"id",$Json$Decode.$int),
       A2($Json$Decode._op[":="],"name",$Json$Decode.string),
       parseAmount,
-      A2($Json$Decode._op[":="],"foods",$Json$Decode.list(parseSubIngredient)));
-      return A2($Json$Decode.map,indexed,A2($Json$Decode.map,C,food));
+      A2($Json$Decode._op[":="],"nutrition",parseNutrition));
+      return A2($Json$Decode.map,indexed,food);
    }();
-   var I = function (a) {    return {ctor: "I",_0: a};};
-   var parseIngredient = function () {
-      var food = A5($Json$Decode.object4,
-      IngredientJson,
-      A2($Json$Decode._op[":="],"id",$Json$Decode.$int),
-      A2($Json$Decode._op[":="],"name",$Json$Decode.string),
-      parseAmount,
-      A2($Json$Decode._op[":="],"calories",$Json$Decode.$float));
-      return A2($Json$Decode.map,indexed,A2($Json$Decode.map,I,food));
-   }();
-   var jsonToFoods = A2($Json$Decode.map,$Dict.fromList,$Json$Decode.list($Json$Decode.oneOf(_U.list([parseIngredient,parseCompoundFood]))));
-   return _elm.FoodJson.values = {_op: _op,jsonToFoods: jsonToFoods,I: I,C: C};
+   var jsonToFoods = A2($Json$Decode.map,$Dict.fromList,$Json$Decode.list(parseFood));
+   return _elm.FoodJson.values = {_op: _op,jsonToFoods: jsonToFoods};
 };
 Elm.Grid = Elm.Grid || {};
 Elm.Grid.make = function (_elm) {
@@ -11001,12 +10991,12 @@ Elm.Main.make = function (_elm) {
    $Debug = Elm.Debug.make(_elm),
    $Dict = Elm.Dict.make(_elm),
    $FoodJson = Elm.FoodJson.make(_elm),
+   $Foods = Elm.Foods.make(_elm),
    $Grid = Elm.Grid.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Http = Elm.Http.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
-   $Model = Elm.Model.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $Styles = Elm.Styles.make(_elm),
@@ -11014,9 +11004,9 @@ Elm.Main.make = function (_elm) {
    var _op = {};
    var foodsList = function (_p0) {
       var _p1 = _p0;
-      var columns = _U.list([{name: "Name",fn: function (_p2) {    var _p3 = _p2;return _p3.food.name;}}
-                            ,{name: "Amount",fn: function (_p4) {    var _p5 = _p4;return $Basics.toString(_p5.food.amount);}}
-                            ,{name: "Calories",fn: function (instance) {    return $Basics.toString($Model.calories(instance));}}]);
+      var columns = _U.list([{name: "Name",fn: function (food) {    return food.name;}}
+                            ,{name: "Amount",fn: function (food) {    return $Basics.toString(food.amount);}}
+                            ,{name: "Calories",fn: function (food) {    return $Basics.toString(A2($Foods.foodCalories,$Dict.empty,food));}}]);
       return $Card.card(_U.list([A2($Grid.grid,columns,_p1.foods)]));
    };
    var main2 = $Styles.render(foodsList({foods: _U.list([])}));
@@ -11024,11 +11014,11 @@ Elm.Main.make = function (_elm) {
    var foodRequests = Elm.Native.Task.make(_elm).perform(A2($Task.andThen,
    $Task.toResult(A2($Task.mapError,
    function (e) {
-      var _p6 = e;
-      if (_p6.ctor === "UnexpectedPayload") {
-            return _p6._0;
+      var _p2 = e;
+      if (_p2.ctor === "UnexpectedPayload") {
+            return _p2._0;
          } else {
-            return $Basics.toString(_p6);
+            return $Basics.toString(_p2);
          }
    },
    A2($Http.get,$FoodJson.jsonToFoods,"http://localhost:3000/foods"))),
@@ -11037,7 +11027,7 @@ Elm.Main.make = function (_elm) {
    function (v) {
       return A2($Html.pre,
       _U.list([]),
-      _U.list([$Html.text(function () {    var _p7 = v;if (_p7.ctor === "Err") {    return _p7._0;} else {    return $Basics.toString(_p7);}}())]));
+      _U.list([$Html.text(function () {    var _p3 = v;if (_p3.ctor === "Err") {    return _p3._0;} else {    return $Basics.toString(_p3);}}())]));
    },
    foodResults.signal);
    var Not = {ctor: "Not"};

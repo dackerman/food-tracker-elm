@@ -19,45 +19,35 @@ import Foods exposing (..)
 
 jsonToFoods : Json.Decoder (Dict Int Food)
 jsonToFoods =
-  Json.list (oneOf [parseIngredient, parseRecipe])
+  Json.list parseFood
     |> Json.map Dict.fromList
 
-parseIngredient : Json.Decoder (Int, Food)
-parseIngredient =
-  let food = object4
-             Ingredient
-             ("id" := int)
-             ("name" := string)
-             parseAmount
-             ("calories" := float)
+parseFood : Json.Decoder (Int, Food)
+parseFood =
+  let food =
+        object4
+          Food
+          ("id" := int)
+          ("name" := string)
+          parseAmount
+          ("nutrition" := parseNutrition)
   in food
-    |> (Json.map I)
-    |> (Json.map indexed)
+    |> Json.map indexed
 
-parseRecipe : Json.Decoder (Int, Food)
-parseRecipe =
-  let food = object4
-             Recipe
-               ("id" := int)
-               ("name" := string)
-               parseAmount
-               ("foods" := (Json.list parseIngredientRef))
-  in food
-    |> (Json.map C)
-    |> (Json.map indexed)
+parseNutrition : Json.Decoder Nutrition
+parseNutrition =
+  oneOf [ Json.map Calories float
+        , Json.map Recipe (Json.list parseFoodRef) ]
 
-indexed : Food -> (Int, Food)
-indexed food =
-  case food of
-    C contents -> (contents.id, food)
-    I contents -> (contents.id, food)
-
-parseIngredientRef : Json.Decoder IngredientRef
-parseIngredientRef =
+parseFoodRef : Json.Decoder FoodRef
+parseFoodRef =
   object2
-    IngredientRef
+    FoodRef
     ("id" := int)
     parseAmount
+
+indexed : Food -> (Int, Food)
+indexed food = (food.id, food)
 
 parseAmount : Json.Decoder Measurement
 parseAmount =

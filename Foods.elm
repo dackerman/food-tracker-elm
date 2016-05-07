@@ -6,31 +6,24 @@ import Maybe exposing (Maybe)
 
 type alias FoodDB = Dict Int Food
 
-type Food = I Ingredient
-          | R Recipe
+type Nutrition = Calories Float
+               | Recipe (List FoodRef)
 
-type alias Ingredient =
+type alias Food =
   { id : Int
   , name : String
   , amount : Measurement
-  , calories : Float
+  , nutrition : Nutrition
   }
 
-type alias Recipe =
-  { id : Int
-  , name : String
-  , amount : Measurement
-  , items : List IngredientRef
-  }
-
-type alias IngredientRef =
+type alias FoodRef =
   { id : Int
   , amount : Measurement
   }
 
 type alias EatenFood =
   { id : Int
-  , food : IngredientRef
+  , food : FoodRef
   }
 
 type Measurement
@@ -55,7 +48,7 @@ normalized m =
     Milligrams a -> 28349.5 * a
     Container a -> 1 * a
 
-lookup : FoodDB -> IngredientRef -> Maybe Food
+lookup : FoodDB -> FoodRef -> Maybe Food
 lookup db ref = Dict.get (ref.id) db
 
 sum : List number -> number
@@ -64,13 +57,13 @@ sum = foldl (+) 0
 foodCalories : FoodDB -> Food -> Float
 foodCalories db food =
   case food.nutrition of
-    I {calories} -> calories
-    R {items} ->
-      let ingredientCalories i =
-            lookup db i
+    Calories calories -> calories
+    Recipe foodRefs ->
+      let ingredientCalories ref =
+            lookup db ref
               |> Maybe.map (foodCalories db)
               |> Maybe.withDefault 0
-      in sum (map ingredientCalories items)
+      in sum (map ingredientCalories foodRefs)
 
 calories : FoodDB -> EatenFood -> Float
 calories db eaten =
