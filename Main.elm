@@ -9,15 +9,6 @@ import Model exposing (..)
 import Styles exposing (..)
 import Grid exposing (..)
 
-row : String -> List Html -> Html
-row color inner =
-  div [
-   style <|
-     [ ("backgroundColor", color)
-     ] ++ mediumPadding
-  ] inner
-
-
 groundBeef : Food
 groundBeef = Ingredient
              { name = "Ground Beef"
@@ -85,55 +76,11 @@ type Action = Not
 update : Action -> Model -> Model
 update a m = m
 
-main = foodsList model
+main = render <| foodsList model
 
-container : Model -> Html
-container m =
-  div [ style containerStyle ]
-        [ content m
-        , footer
-        ]
-
-
-content : Model -> Html
-content m =
-  div [
-   style <|
-     widthConstrained ++
-     [ ("flexGrow", "2") ]
-  ]
-  [ row primary [ text "Health Tracker" ]
-  , calendarMonthChooser m
-  , foodsList m
-  ]
-
-foodsList : Model -> Html
+foodsList : Model -> Node
 foodsList {foods} =
   grid [ (\{food} -> name food)
        , (\{food} -> toString <| amount food)
        , (\instance -> toString <| calories instance)
        ] foods
-
-calendarMonthChooser : Model -> Html
-calendarMonthChooser model =
-  row white [
-         div [ style [("textAlign", "center")] ] [
-                text ("< " ++ model.currentMonth ++ " >")
-               ]
-        ]
-
-
-footer : Html
-footer =
-  div [
-   style <|
-     widthConstrained ++
-     mediumPadding ++
-     [ ("backgroundColor", darkGrey)
-     , ("color", white)
-     , ("display", "flex")
-     , ("justifyContent", "center")
-     , ("alignItems", "center") ]
-  ] [
-   text "ackermansoftware.com"
-  ]

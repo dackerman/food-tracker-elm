@@ -10220,11 +10220,11 @@ Elm.Html.Attributes.make = function (_elm) {
                                         ,property: property
                                         ,attribute: attribute};
 };
-Elm.Grid = Elm.Grid || {};
-Elm.Grid.make = function (_elm) {
+Elm.Styles = Elm.Styles || {};
+Elm.Styles.make = function (_elm) {
    "use strict";
-   _elm.Grid = _elm.Grid || {};
-   if (_elm.Grid.values) return _elm.Grid.values;
+   _elm.Styles = _elm.Styles || {};
+   if (_elm.Styles.values) return _elm.Styles.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
@@ -10271,10 +10271,35 @@ Elm.Grid.make = function (_elm) {
          }
    });
    var Margin = function (a) {    return {ctor: "Margin",_0: a};};
-   var gridCol = function (val) {    return A2(withStyle,Margin(Rem(1)),nodes(_U.list([text(val)])));};
-   var gridRow = F2(function (columns,obj) {    return nodes(A2($List.map,gridCol,A2($List.map,F2(function (x,y) {    return y(x);})(obj),columns)));});
-   var grid = F2(function (columns,data) {    return render(A2(withStyle,Margin(Rem(1)),nodes(A2($List.map,gridRow(columns),data))));});
    var Padding = function (a) {    return {ctor: "Padding",_0: a};};
+   return _elm.Styles.values = {_op: _op
+                               ,withStyle: withStyle
+                               ,text: text
+                               ,nodes: nodes
+                               ,render: render
+                               ,Text: Text
+                               ,Node: Node
+                               ,Rem: Rem
+                               ,Padding: Padding
+                               ,Margin: Margin};
+};
+Elm.Grid = Elm.Grid || {};
+Elm.Grid.make = function (_elm) {
+   "use strict";
+   _elm.Grid = _elm.Grid || {};
+   if (_elm.Grid.values) return _elm.Grid.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Styles = Elm.Styles.make(_elm);
+   var _op = {};
+   var gridCol = function (val) {    return A2($Styles.withStyle,$Styles.Margin($Styles.Rem(1)),$Styles.nodes(_U.list([$Styles.text(val)])));};
+   var gridRow = F2(function (columns,obj) {    return $Styles.nodes(A2($List.map,gridCol,A2($List.map,F2(function (x,y) {    return y(x);})(obj),columns)));});
+   var grid = F2(function (columns,data) {    return A2($Styles.withStyle,$Styles.Margin($Styles.Rem(1)),$Styles.nodes(A2($List.map,gridRow(columns),data)));});
    return _elm.Grid.values = {_op: _op,grid: grid};
 };
 Elm.Model = Elm.Model || {};
@@ -10342,48 +10367,6 @@ Elm.Model.make = function (_elm) {
                               ,foodCalories: foodCalories
                               ,calories: calories};
 };
-Elm.Styles = Elm.Styles || {};
-Elm.Styles.make = function (_elm) {
-   "use strict";
-   _elm.Styles = _elm.Styles || {};
-   if (_elm.Styles.values) return _elm.Styles.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
-   var _op = {};
-   var mediumMargin = _U.list([{ctor: "_Tuple2",_0: "margin",_1: "1em"}]);
-   var mediumPadding = _U.list([{ctor: "_Tuple2",_0: "padding",_1: "1em"}]);
-   var widthConstrained = _U.list([{ctor: "_Tuple2",_0: "maxWidth",_1: "900px"},{ctor: "_Tuple2",_0: "width",_1: "100%"}]);
-   var containerStyle = A2($Basics._op["++"],
-   widthConstrained,
-   _U.list([{ctor: "_Tuple2",_0: "display",_1: "flex"}
-           ,{ctor: "_Tuple2",_0: "flexDirection",_1: "column"}
-           ,{ctor: "_Tuple2",_0: "justifyContent",_1: "space-between"}]));
-   var secondary = "#45ff4d";
-   var primary = "#ff4593";
-   var white = "white";
-   var darkGrey = "#333";
-   var lightGrey = "#eee";
-   var pageStyle = _U.list([{ctor: "_Tuple2",_0: "backgroundColor",_1: lightGrey}
-                           ,{ctor: "_Tuple2",_0: "display",_1: "flex"}
-                           ,{ctor: "_Tuple2",_0: "justifyContent",_1: "center"}
-                           ,{ctor: "_Tuple2",_0: "height",_1: "100%"}]);
-   return _elm.Styles.values = {_op: _op
-                               ,lightGrey: lightGrey
-                               ,darkGrey: darkGrey
-                               ,white: white
-                               ,primary: primary
-                               ,secondary: secondary
-                               ,containerStyle: containerStyle
-                               ,widthConstrained: widthConstrained
-                               ,mediumPadding: mediumPadding
-                               ,mediumMargin: mediumMargin
-                               ,pageStyle: pageStyle};
-};
 Elm.Main = Elm.Main || {};
 Elm.Main.make = function (_elm) {
    "use strict";
@@ -10393,8 +10376,6 @@ Elm.Main.make = function (_elm) {
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Grid = Elm.Grid.make(_elm),
-   $Html = Elm.Html.make(_elm),
-   $Html$Attributes = Elm.Html.Attributes.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Model = Elm.Model.make(_elm),
@@ -10402,17 +10383,6 @@ Elm.Main.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm),
    $Styles = Elm.Styles.make(_elm);
    var _op = {};
-   var footer = A2($Html.div,
-   _U.list([$Html$Attributes.style(A2($Basics._op["++"],
-   $Styles.widthConstrained,
-   A2($Basics._op["++"],
-   $Styles.mediumPadding,
-   _U.list([{ctor: "_Tuple2",_0: "backgroundColor",_1: $Styles.darkGrey}
-           ,{ctor: "_Tuple2",_0: "color",_1: $Styles.white}
-           ,{ctor: "_Tuple2",_0: "display",_1: "flex"}
-           ,{ctor: "_Tuple2",_0: "justifyContent",_1: "center"}
-           ,{ctor: "_Tuple2",_0: "alignItems",_1: "center"}]))))]),
-   _U.list([$Html.text("ackermansoftware.com")]));
    var foodsList = function (_p0) {
       var _p1 = _p0;
       return A2($Grid.grid,
@@ -10441,27 +10411,8 @@ Elm.Main.make = function (_elm) {
                                ,{food: chickenBreast,amount: $Model.Grams(100)}
                                ,{food: burritoBowl,amount: $Model.Ounces(8)}])
                ,currentMonth: "March"};
-   var main = foodsList(model);
-   var row = F2(function (color,inner) {
-      return A2($Html.div,
-      _U.list([$Html$Attributes.style(A2($Basics._op["++"],_U.list([{ctor: "_Tuple2",_0: "backgroundColor",_1: color}]),$Styles.mediumPadding))]),
-      inner);
-   });
-   var calendarMonthChooser = function (model) {
-      return A2(row,
-      $Styles.white,
-      _U.list([A2($Html.div,
-      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "textAlign",_1: "center"}]))]),
-      _U.list([$Html.text(A2($Basics._op["++"],"< ",A2($Basics._op["++"],model.currentMonth," >")))]))]));
-   };
-   var content = function (m) {
-      return A2($Html.div,
-      _U.list([$Html$Attributes.style(A2($Basics._op["++"],$Styles.widthConstrained,_U.list([{ctor: "_Tuple2",_0: "flexGrow",_1: "2"}])))]),
-      _U.list([A2(row,$Styles.primary,_U.list([$Html.text("Health Tracker")])),calendarMonthChooser(m),foodsList(m)]));
-   };
-   var container = function (m) {    return A2($Html.div,_U.list([$Html$Attributes.style($Styles.containerStyle)]),_U.list([content(m),footer]));};
+   var main = $Styles.render(foodsList(model));
    return _elm.Main.values = {_op: _op
-                             ,row: row
                              ,groundBeef: groundBeef
                              ,chickenBreast: chickenBreast
                              ,chipotleChicken: chipotleChicken
@@ -10472,9 +10423,5 @@ Elm.Main.make = function (_elm) {
                              ,Not: Not
                              ,update: update
                              ,main: main
-                             ,container: container
-                             ,content: content
-                             ,foodsList: foodsList
-                             ,calendarMonthChooser: calendarMonthChooser
-                             ,footer: footer};
+                             ,foodsList: foodsList};
 };
