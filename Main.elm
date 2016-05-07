@@ -15,37 +15,73 @@ import Card exposing (..)
 import FoodJson exposing (..)
 import Foods exposing (..)
 
-type Action = Not
+parseHttpError : Http.Error -> String
+parseHttpError error =
+  case error of
+    Http.Timeout ->
+      "timeout"
 
-foodResults : Signal.Mailbox (Result String (Dict Int Food))
-foodResults = Signal.mailbox (Err "")
+    Http.NetworkError ->
+      "network error"
+
+    Http.UnexpectedPayload msg ->
+      msg
+
+    Http.BadResponse code msg ->
+      toString code ++ ": " ++ msg
 
 port foodRequests : Task x ()
 port foodRequests =
   (Http.get parseFoodDB "http://localhost:3000/foods"
-  |> (mapError (\e -> case e of
-                        Http.UnexpectedPayload m -> m
-                        a -> toString a))
-  |> toResult)
-  `andThen` Signal.send foodResults.address
+  |> (mapError parseHttpError))
+  `andThen` (Signal.send actionMailbox.address << UpdateDB)
+  `onError` (Signal.send actionMailbox.address << ShowError)
 
-main2 = Signal.map (\v -> Html.pre [] [Html.text (case v of
-                                                  Err msg -> msg
-                                                  a -> toString a)]) foodResults.signal
+actionMailbox : Signal.Mailbox Action
+actionMailbox = Signal.mailbox Noop
+
+type Action = UpdateDB FoodDB
+            | ShowError String
+            | Noop
 
 type alias Model =
-  { db : FoodDB
+  { error : String
+  , db : FoodDB
   , today : List EatenFood
   }
 
-emptyModel = { db = Dict.empty, today = [] }
+testEatenFood : EatenFood
+testEatenFood =
+  { id = 8
+  , food =
+    { id = 1
+    , amount = Ounces 3
+    }
+  }
 
-main = render (foodsList emptyModel)
+emptyModel : Model
+emptyModel = { error = ""
+             , db = Dict.empty
+             , today = [testEatenFood] }
+
+main = Signal.map view (Signal.foldp update emptyModel actionMailbox.signal)
+
+update : Action -> Model -> Model
+update action model =
+  case action of
+    Noop -> model
+    ShowError e -> { model | error = e }
+    UpdateDB newDB -> { model | db = newDB }
+
+view : Model -> Html
+view model = if model.error /= ""
+             then Html.text model.error
+             else render (foodsList model)
 
 foodsList : Model -> Node
 foodsList {db, today} =
   let columns = [ { name = "Name", fn = (\(eaten, food) -> food.name) }
-                , { name = "Amount", fn = (\(eaten, food) -> toString food.amount) }
-                , { name = "Calories", fn = (\(eaten, food) -> toString <| foodCalories db food) }
+                , { name = "Amount", fn = (\(eaten, food) -> toString eaten.food.amount) }
+                , { name = "Calories", fn = (\(eaten, food) -> toString <| calories db eaten) }
                 ]
   in card [ grid columns (inflate db today) ]

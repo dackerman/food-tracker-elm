@@ -11021,33 +11021,54 @@ Elm.Main.make = function (_elm) {
       var _p1 = _p0;
       var _p8 = _p1.db;
       var columns = _U.list([{name: "Name",fn: function (_p2) {    var _p3 = _p2;return _p3._1.name;}}
-                            ,{name: "Amount",fn: function (_p4) {    var _p5 = _p4;return $Basics.toString(_p5._1.amount);}}
-                            ,{name: "Calories",fn: function (_p6) {    var _p7 = _p6;return $Basics.toString(A2($Foods.foodCalories,_p8,_p7._1));}}]);
+                            ,{name: "Amount",fn: function (_p4) {    var _p5 = _p4;return $Basics.toString(_p5._0.food.amount);}}
+                            ,{name: "Calories",fn: function (_p6) {    var _p7 = _p6;return $Basics.toString(A2($Foods.calories,_p8,_p7._0));}}]);
       return $Card.card(_U.list([A2($Grid.grid,columns,A2($Foods.inflate,_p8,_p1.today))]));
    };
-   var emptyModel = {db: $Dict.empty,today: _U.list([])};
-   var main = $Styles.render(foodsList(emptyModel));
-   var Model = F2(function (a,b) {    return {db: a,today: b};});
-   var foodResults = $Signal.mailbox($Result.Err(""));
-   var foodRequests = Elm.Native.Task.make(_elm).perform(A2($Task.andThen,
-   $Task.toResult(A2($Task.mapError,
-   function (e) {
-      var _p9 = e;
-      if (_p9.ctor === "UnexpectedPayload") {
-            return _p9._0;
-         } else {
-            return $Basics.toString(_p9);
-         }
-   },
-   A2($Http.get,$FoodJson.parseFoodDB,"http://localhost:3000/foods"))),
-   $Signal.send(foodResults.address)));
-   var main2 = A2($Signal.map,
-   function (v) {
-      return A2($Html.pre,
-      _U.list([]),
-      _U.list([$Html.text(function () {    var _p10 = v;if (_p10.ctor === "Err") {    return _p10._0;} else {    return $Basics.toString(_p10);}}())]));
-   },
-   foodResults.signal);
-   var Not = {ctor: "Not"};
-   return _elm.Main.values = {_op: _op,Not: Not,foodResults: foodResults,main2: main2,Model: Model,emptyModel: emptyModel,main: main,foodsList: foodsList};
+   var view = function (model) {    return !_U.eq(model.error,"") ? $Html.text(model.error) : $Styles.render(foodsList(model));};
+   var update = F2(function (action,model) {
+      var _p9 = action;
+      switch (_p9.ctor)
+      {case "Noop": return model;
+         case "ShowError": return _U.update(model,{error: _p9._0});
+         default: return _U.update(model,{db: _p9._0});}
+   });
+   var testEatenFood = {id: 8,food: {id: 1,amount: $Foods.Ounces(3)}};
+   var emptyModel = {error: "",db: $Dict.empty,today: _U.list([testEatenFood])};
+   var Model = F3(function (a,b,c) {    return {error: a,db: b,today: c};});
+   var Noop = {ctor: "Noop"};
+   var ShowError = function (a) {    return {ctor: "ShowError",_0: a};};
+   var UpdateDB = function (a) {    return {ctor: "UpdateDB",_0: a};};
+   var actionMailbox = $Signal.mailbox(Noop);
+   var main = A2($Signal.map,view,A3($Signal.foldp,update,emptyModel,actionMailbox.signal));
+   var parseHttpError = function (error) {
+      var _p10 = error;
+      switch (_p10.ctor)
+      {case "Timeout": return "timeout";
+         case "NetworkError": return "network error";
+         case "UnexpectedPayload": return _p10._0;
+         default: return A2($Basics._op["++"],$Basics.toString(_p10._0),A2($Basics._op["++"],": ",_p10._1));}
+   };
+   var foodRequests = Elm.Native.Task.make(_elm).perform(A2($Task.onError,
+   A2($Task.andThen,
+   A2($Task.mapError,parseHttpError,A2($Http.get,$FoodJson.parseFoodDB,"http://localhost:3000/foods")),
+   function (_p11) {
+      return A2($Signal.send,actionMailbox.address,UpdateDB(_p11));
+   }),
+   function (_p12) {
+      return A2($Signal.send,actionMailbox.address,ShowError(_p12));
+   }));
+   return _elm.Main.values = {_op: _op
+                             ,parseHttpError: parseHttpError
+                             ,actionMailbox: actionMailbox
+                             ,UpdateDB: UpdateDB
+                             ,ShowError: ShowError
+                             ,Noop: Noop
+                             ,Model: Model
+                             ,testEatenFood: testEatenFood
+                             ,emptyModel: emptyModel
+                             ,main: main
+                             ,update: update
+                             ,view: view
+                             ,foodsList: foodsList};
 };
