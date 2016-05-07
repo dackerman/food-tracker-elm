@@ -17,7 +17,7 @@ import Dict exposing (Dict)
 
 import Foods exposing (..)
 
-parseFoodDB : Json.Decoder (Dict Int Food)
+parseFoodDB : Json.Decoder FoodDB
 parseFoodDB =
   Json.list parseFood
     |> Json.map Dict.fromList

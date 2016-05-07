@@ -11010,6 +11010,7 @@ Elm.Main.make = function (_elm) {
    $Grid = Elm.Grid.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Http = Elm.Http.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
@@ -11023,7 +11024,7 @@ Elm.Main.make = function (_elm) {
       var columns = _U.list([{name: "Name",fn: function (_p2) {    var _p3 = _p2;return _p3._1.name;}}
                             ,{name: "Amount",fn: function (_p4) {    var _p5 = _p4;return $Basics.toString(_p5._0.food.amount);}}
                             ,{name: "Calories",fn: function (_p6) {    var _p7 = _p6;return $Basics.toString(A2($Foods.calories,_p8,_p7._0));}}]);
-      return $Card.card(_U.list([A2($Grid.grid,columns,A2($Foods.inflate,_p8,_p1.today))]));
+      return $Card.card(_U.list([A2($Grid.grid,columns,A2($Foods.inflate,_p8,_p1.foodLog))]));
    };
    var view = function (model) {    return !_U.eq(model.error,"") ? $Html.text(model.error) : $Styles.render(foodsList(model));};
    var update = F2(function (action,model) {
@@ -11034,8 +11035,8 @@ Elm.Main.make = function (_elm) {
          default: return _U.update(model,{db: _p9._0});}
    });
    var testEatenFood = {id: 8,food: {id: 1,amount: $Foods.Ounces(3)}};
-   var emptyModel = {error: "",db: $Dict.empty,today: _U.list([testEatenFood])};
-   var Model = F3(function (a,b,c) {    return {error: a,db: b,today: c};});
+   var emptyModel = {error: "",db: $Dict.empty,foodLog: _U.list([testEatenFood])};
+   var Model = F3(function (a,b,c) {    return {error: a,db: b,foodLog: c};});
    var Noop = {ctor: "Noop"};
    var ShowError = function (a) {    return {ctor: "ShowError",_0: a};};
    var UpdateDB = function (a) {    return {ctor: "UpdateDB",_0: a};};
@@ -11049,17 +11050,21 @@ Elm.Main.make = function (_elm) {
          case "UnexpectedPayload": return _p10._0;
          default: return A2($Basics._op["++"],$Basics.toString(_p10._0),A2($Basics._op["++"],": ",_p10._1));}
    };
-   var foodRequests = Elm.Native.Task.make(_elm).perform(A2($Task.onError,
-   A2($Task.andThen,
-   A2($Task.mapError,parseHttpError,A2($Http.get,$FoodJson.parseFoodDB,"http://localhost:3000/foods")),
-   function (_p11) {
-      return A2($Signal.send,actionMailbox.address,UpdateDB(_p11));
-   }),
-   function (_p12) {
-      return A2($Signal.send,actionMailbox.address,ShowError(_p12));
-   }));
+   var httpTask = F3(function (endpoint,decoder,onSuccess) {
+      return A2($Task.onError,
+      A2($Task.andThen,
+      A2($Task.mapError,parseHttpError,A2($Http.get,decoder,A2($Basics._op["++"],"http://localhost:3000",endpoint))),
+      function (_p11) {
+         return A2($Signal.send,actionMailbox.address,onSuccess(_p11));
+      }),
+      function (_p12) {
+         return A2($Signal.send,actionMailbox.address,ShowError(_p12));
+      });
+   });
+   var foodRequests = Elm.Native.Task.make(_elm).perform(A3(httpTask,"/foods",$FoodJson.parseFoodDB,UpdateDB));
    return _elm.Main.values = {_op: _op
                              ,parseHttpError: parseHttpError
+                             ,httpTask: httpTask
                              ,actionMailbox: actionMailbox
                              ,UpdateDB: UpdateDB
                              ,ShowError: ShowError

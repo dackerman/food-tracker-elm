@@ -6,6 +6,7 @@ import List exposing (concat, map, append)
 import Dict exposing (Dict)
 import Maybe exposing (Maybe(..), withDefault)
 import Task exposing (..)
+import Json.Decode as Json
 
 import Http
 
@@ -32,10 +33,19 @@ parseHttpError error =
 
 port foodRequests : Task x ()
 port foodRequests =
-  (Http.get parseFoodDB "http://localhost:3000/foods"
+  httpTask "/foods" parseFoodDB UpdateDB
+{-
+port foodLogRequests : Task x ()
+port foodLogRequests =
+  httpTask "/foodLog" parseFoodLog UpdateFoodLog
+-}
+httpTask : String -> Json.Decoder a -> (a -> Action) -> Task x ()
+httpTask endpoint decoder onSuccess =
+  (Http.get decoder ("http://localhost:3000" ++ endpoint)
   |> (mapError parseHttpError))
-  `andThen` (Signal.send actionMailbox.address << UpdateDB)
+  `andThen` (Signal.send actionMailbox.address << onSuccess)
   `onError` (Signal.send actionMailbox.address << ShowError)
+
 
 actionMailbox : Signal.Mailbox Action
 actionMailbox = Signal.mailbox Noop
@@ -47,7 +57,7 @@ type Action = UpdateDB FoodDB
 type alias Model =
   { error : String
   , db : FoodDB
-  , today : List EatenFood
+  , foodLog : List EatenFood
   }
 
 testEatenFood : EatenFood
@@ -62,7 +72,7 @@ testEatenFood =
 emptyModel : Model
 emptyModel = { error = ""
              , db = Dict.empty
-             , today = [testEatenFood] }
+             , foodLog = [testEatenFood] }
 
 main = Signal.map view (Signal.foldp update emptyModel actionMailbox.signal)
 
@@ -79,9 +89,9 @@ view model = if model.error /= ""
              else render (foodsList model)
 
 foodsList : Model -> Node
-foodsList {db, today} =
+foodsList {db, foodLog} =
   let columns = [ { name = "Name", fn = (\(eaten, food) -> food.name) }
                 , { name = "Amount", fn = (\(eaten, food) -> toString eaten.food.amount) }
                 , { name = "Calories", fn = (\(eaten, food) -> toString <| calories db eaten) }
                 ]
-  in card [ grid columns (inflate db today) ]
+  in card [ grid columns (inflate db foodLog) ]
