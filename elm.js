@@ -10831,25 +10831,37 @@ Elm.Foods.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
+   var filterMaybes = function (maybes) {
+      var pickJusts = F2(function (m,xs) {    var _p0 = m;if (_p0.ctor === "Just") {    return A2($List._op["::"],_p0._0,xs);} else {    return xs;}});
+      return A3($List.foldl,pickJusts,_U.list([]),maybes);
+   };
+   var isPresent = function (m) {    var _p1 = m;if (_p1.ctor === "Just") {    return true;} else {    return false;}};
    var sum = A2($List.foldl,F2(function (x,y) {    return x + y;}),0);
    var lookup = F2(function (db,ref) {    return A2($Dict.get,ref.id,db);});
+   var inflate = F2(function (db,eatenFoods) {
+      return filterMaybes(A2($List.map,
+      function (eaten) {
+         return A2($Maybe.map,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};})(eaten),A2(lookup,db,eaten.food));
+      },
+      eatenFoods));
+   });
    var foodCalories = F2(function (db,food) {
-      var _p0 = food.nutrition;
-      if (_p0.ctor === "Calories") {
-            return _p0._0;
+      var _p2 = food.nutrition;
+      if (_p2.ctor === "Calories") {
+            return _p2._0;
          } else {
             var ingredientCalories = function (ref) {    return A2($Maybe.withDefault,0,A2($Maybe.map,foodCalories(db),A2(lookup,db,ref)));};
-            return sum(A2($List.map,ingredientCalories,_p0._0));
+            return sum(A2($List.map,ingredientCalories,_p2._0));
          }
    });
    var normalized = function (m) {
-      var _p1 = m;
-      switch (_p1.ctor)
-      {case "Ounces": return 1 * _p1._0;
-         case "Pounds": return 6.25e-2 * _p1._0;
-         case "Grams": return 28.3495 * _p1._0;
-         case "Milligrams": return 28349.5 * _p1._0;
-         default: return 1 * _p1._0;}
+      var _p3 = m;
+      switch (_p3.ctor)
+      {case "Ounces": return 1 * _p3._0;
+         case "Pounds": return 6.25e-2 * _p3._0;
+         case "Grams": return 28.3495 * _p3._0;
+         case "Milligrams": return 28349.5 * _p3._0;
+         default: return 1 * _p3._0;}
    };
    var ratio = F2(function (mA,mB) {    return normalized(mB) / normalized(mA);});
    var calories = F2(function (db,eaten) {
@@ -10886,6 +10898,9 @@ Elm.Foods.make = function (_elm) {
                               ,normalized: normalized
                               ,lookup: lookup
                               ,sum: sum
+                              ,isPresent: isPresent
+                              ,filterMaybes: filterMaybes
+                              ,inflate: inflate
                               ,foodCalories: foodCalories
                               ,calories: calories};
 };
@@ -10938,8 +10953,8 @@ Elm.FoodJson.make = function (_elm) {
       A2($Json$Decode._op[":="],"nutrition",parseNutrition));
       return A2($Json$Decode.map,indexed,food);
    }();
-   var jsonToFoods = A2($Json$Decode.map,$Dict.fromList,$Json$Decode.list(parseFood));
-   return _elm.FoodJson.values = {_op: _op,jsonToFoods: jsonToFoods};
+   var parseFoodDB = A2($Json$Decode.map,$Dict.fromList,$Json$Decode.list(parseFood));
+   return _elm.FoodJson.values = {_op: _op,parseFoodDB: parseFoodDB};
 };
 Elm.Grid = Elm.Grid || {};
 Elm.Grid.make = function (_elm) {
@@ -11004,32 +11019,35 @@ Elm.Main.make = function (_elm) {
    var _op = {};
    var foodsList = function (_p0) {
       var _p1 = _p0;
-      var columns = _U.list([{name: "Name",fn: function (food) {    return food.name;}}
-                            ,{name: "Amount",fn: function (food) {    return $Basics.toString(food.amount);}}
-                            ,{name: "Calories",fn: function (food) {    return $Basics.toString(A2($Foods.foodCalories,$Dict.empty,food));}}]);
-      return $Card.card(_U.list([A2($Grid.grid,columns,_p1.foods)]));
+      var _p8 = _p1.db;
+      var columns = _U.list([{name: "Name",fn: function (_p2) {    var _p3 = _p2;return _p3._1.name;}}
+                            ,{name: "Amount",fn: function (_p4) {    var _p5 = _p4;return $Basics.toString(_p5._1.amount);}}
+                            ,{name: "Calories",fn: function (_p6) {    var _p7 = _p6;return $Basics.toString(A2($Foods.foodCalories,_p8,_p7._1));}}]);
+      return $Card.card(_U.list([A2($Grid.grid,columns,A2($Foods.inflate,_p8,_p1.today))]));
    };
-   var main2 = $Styles.render(foodsList({foods: _U.list([])}));
+   var emptyModel = {db: $Dict.empty,today: _U.list([])};
+   var main = $Styles.render(foodsList(emptyModel));
+   var Model = F2(function (a,b) {    return {db: a,today: b};});
    var foodResults = $Signal.mailbox($Result.Err(""));
    var foodRequests = Elm.Native.Task.make(_elm).perform(A2($Task.andThen,
    $Task.toResult(A2($Task.mapError,
    function (e) {
-      var _p2 = e;
-      if (_p2.ctor === "UnexpectedPayload") {
-            return _p2._0;
+      var _p9 = e;
+      if (_p9.ctor === "UnexpectedPayload") {
+            return _p9._0;
          } else {
-            return $Basics.toString(_p2);
+            return $Basics.toString(_p9);
          }
    },
-   A2($Http.get,$FoodJson.jsonToFoods,"http://localhost:3000/foods"))),
+   A2($Http.get,$FoodJson.parseFoodDB,"http://localhost:3000/foods"))),
    $Signal.send(foodResults.address)));
-   var main = A2($Signal.map,
+   var main2 = A2($Signal.map,
    function (v) {
       return A2($Html.pre,
       _U.list([]),
-      _U.list([$Html.text(function () {    var _p3 = v;if (_p3.ctor === "Err") {    return _p3._0;} else {    return $Basics.toString(_p3);}}())]));
+      _U.list([$Html.text(function () {    var _p10 = v;if (_p10.ctor === "Err") {    return _p10._0;} else {    return $Basics.toString(_p10);}}())]));
    },
    foodResults.signal);
    var Not = {ctor: "Not"};
-   return _elm.Main.values = {_op: _op,Not: Not,foodResults: foodResults,main: main,main2: main2,foodsList: foodsList};
+   return _elm.Main.values = {_op: _op,Not: Not,foodResults: foodResults,main2: main2,Model: Model,emptyModel: emptyModel,main: main,foodsList: foodsList};
 };

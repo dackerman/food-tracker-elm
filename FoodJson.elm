@@ -1,5 +1,5 @@
 module FoodJson
-  ( jsonToFoods
+  ( parseFoodDB
   ) where
 
 import Json.Decode as Json exposing
@@ -17,8 +17,8 @@ import Dict exposing (Dict)
 
 import Foods exposing (..)
 
-jsonToFoods : Json.Decoder (Dict Int Food)
-jsonToFoods =
+parseFoodDB : Json.Decoder (Dict Int Food)
+parseFoodDB =
   Json.list parseFood
     |> Json.map Dict.fromList
 

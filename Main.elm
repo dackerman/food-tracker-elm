@@ -22,23 +22,30 @@ foodResults = Signal.mailbox (Err "")
 
 port foodRequests : Task x ()
 port foodRequests =
-  (Http.get jsonToFoods "http://localhost:3000/foods"
+  (Http.get parseFoodDB "http://localhost:3000/foods"
   |> (mapError (\e -> case e of
                         Http.UnexpectedPayload m -> m
                         a -> toString a))
   |> toResult)
   `andThen` Signal.send foodResults.address
 
-main = Signal.map (\v -> Html.pre [] [Html.text (case v of
+main2 = Signal.map (\v -> Html.pre [] [Html.text (case v of
                                                   Err msg -> msg
                                                   a -> toString a)]) foodResults.signal
 
-main2 = render <| foodsList {foods = []}
+type alias Model =
+  { db : FoodDB
+  , today : List EatenFood
+  }
 
-foodsList : {foods : List Food} -> Node
-foodsList {foods} =
-  let columns = [ { name = "Name", fn = (\food -> food.name) }
-                , { name = "Amount", fn = (\food -> toString food.amount) }
-                , { name = "Calories", fn = (\food -> toString <| foodCalories (Dict.empty) food) }
+emptyModel = { db = Dict.empty, today = [] }
+
+main = render (foodsList emptyModel)
+
+foodsList : Model -> Node
+foodsList {db, today} =
+  let columns = [ { name = "Name", fn = (\(eaten, food) -> food.name) }
+                , { name = "Amount", fn = (\(eaten, food) -> toString food.amount) }
+                , { name = "Calories", fn = (\(eaten, food) -> toString <| foodCalories db food) }
                 ]
-  in card [ grid columns foods ]
+  in card [ grid columns (inflate db today) ]

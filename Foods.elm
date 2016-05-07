@@ -54,6 +54,24 @@ lookup db ref = Dict.get (ref.id) db
 sum : List number -> number
 sum = foldl (+) 0
 
+isPresent : Maybe a -> Bool
+isPresent m =
+  case m of
+    Just _ -> True
+    Nothing -> False
+
+filterMaybes : List (Maybe a) -> List a
+filterMaybes maybes =
+  let pickJusts m xs = case m of
+                         Just x -> x :: xs
+                         Nothing -> xs
+  in List.foldl pickJusts [] maybes
+
+inflate : FoodDB -> List EatenFood -> List (EatenFood, Food)
+inflate db eatenFoods =
+  map (\eaten -> Maybe.map ((,) eaten) (lookup db eaten.food)) eatenFoods
+    |> filterMaybes
+
 foodCalories : FoodDB -> Food -> Float
 foodCalories db food =
   case food.nutrition of
