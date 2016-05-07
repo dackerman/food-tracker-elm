@@ -10831,14 +10831,13 @@ Elm.Model.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
    var foodCalories = function (food) {
-      var _p0 = food;
-      if (_p0.ctor === "Ingredient") {
+      var _p0 = food.nutrition;
+      if (_p0.ctor === "Macros") {
             return _p0._0.calories;
          } else {
-            return A3($List.foldl,F2(function (x,y) {    return x + y;}),0,A2($List.map,foodCalories,_p0._0.items));
+            return A3($List.foldl,F2(function (x,y) {    return x + y;}),0,A2($List.map,foodCalories,_p0._0));
          }
    };
-   var Macro = F3(function (a,b,c) {    return {ctor: "Macro",_0: a,_1: b,_2: c};});
    var normalized = function (m) {
       var _p1 = m;
       switch (_p1.ctor)
@@ -10851,8 +10850,7 @@ Elm.Model.make = function (_elm) {
    var ratio = F2(function (mA,mB) {    return normalized(mB) / normalized(mA);});
    var calories = function (foodInstance) {
       var food = foodInstance.food;
-      var amount = function () {    var _p2 = food;if (_p2.ctor === "Food") {    return _p2._0.amount;} else {    return _p2._0.amount;}}();
-      var proportion = A2(ratio,amount,foodInstance.amount);
+      var proportion = A2(ratio,food.amount,foodInstance.amount);
       var caloriesForFood = foodCalories(food);
       return proportion * caloriesForFood;
    };
@@ -10861,19 +10859,17 @@ Elm.Model.make = function (_elm) {
    var Grams = function (a) {    return {ctor: "Grams",_0: a};};
    var Ounces = function (a) {    return {ctor: "Ounces",_0: a};};
    var Pounds = function (a) {    return {ctor: "Pounds",_0: a};};
-   var Ingredient = function (a) {    return {ctor: "Ingredient",_0: a};};
-   var Food = function (a) {    return {ctor: "Food",_0: a};};
-   var amount = function (f) {    var _p3 = f;if (_p3.ctor === "Food") {    return _p3._0.amount;} else {    return _p3._0.amount;}};
-   var name = function (f) {    var _p4 = f;if (_p4.ctor === "Food") {    return _p4._0.name;} else {    return _p4._0.name;}};
+   var Food = F3(function (a,b,c) {    return {name: a,amount: b,nutrition: c};});
+   var Macros = function (a) {    return {ctor: "Macros",_0: a};};
+   var Recipe = function (a) {    return {ctor: "Recipe",_0: a};};
    var FoodInstance = F2(function (a,b) {    return {food: a,amount: b};});
    var Model = F2(function (a,b) {    return {foods: a,currentMonth: b};});
    return _elm.Model.values = {_op: _op
                               ,Model: Model
                               ,FoodInstance: FoodInstance
-                              ,name: name
-                              ,amount: amount
+                              ,Recipe: Recipe
+                              ,Macros: Macros
                               ,Food: Food
-                              ,Ingredient: Ingredient
                               ,Pounds: Pounds
                               ,Ounces: Ounces
                               ,Grams: Grams
@@ -10881,7 +10877,6 @@ Elm.Model.make = function (_elm) {
                               ,Container: Container
                               ,ratio: ratio
                               ,normalized: normalized
-                              ,Macro: Macro
                               ,foodCalories: foodCalories
                               ,calories: calories};
 };
@@ -10893,6 +10888,7 @@ Elm.FoodJson.make = function (_elm) {
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
    $Json$Decode = Elm.Json.Decode.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
@@ -10920,29 +10916,39 @@ Elm.FoodJson.make = function (_elm) {
       };
       return A2($Json$Decode.customDecoder,parseTuple,tryParseAmount);
    }();
+   var indexed = function (food) {
+      var _p5 = food;
+      if (_p5.ctor === "C") {
+            return {ctor: "_Tuple2",_0: _p5._0.id,_1: food};
+         } else {
+            return {ctor: "_Tuple2",_0: _p5._0.id,_1: food};
+         }
+   };
    var SubIngredientJson = F2(function (a,b) {    return {id: a,amount: b};});
    var parseSubIngredient = A3($Json$Decode.object2,SubIngredientJson,A2($Json$Decode._op[":="],"id",$Json$Decode.$int),parseAmount);
    var CompoundFoodJson = F4(function (a,b,c,d) {    return {id: a,name: b,amount: c,items: d};});
    var IngredientJson = F4(function (a,b,c,d) {    return {id: a,name: b,amount: c,calories: d};});
    var C = function (a) {    return {ctor: "C",_0: a};};
-   var parseCompoundFood = A2($Json$Decode.map,
-   C,
-   A5($Json$Decode.object4,
-   CompoundFoodJson,
-   A2($Json$Decode._op[":="],"id",$Json$Decode.$int),
-   A2($Json$Decode._op[":="],"name",$Json$Decode.string),
-   parseAmount,
-   A2($Json$Decode._op[":="],"foods",$Json$Decode.list(parseSubIngredient))));
+   var parseCompoundFood = function () {
+      var food = A5($Json$Decode.object4,
+      CompoundFoodJson,
+      A2($Json$Decode._op[":="],"id",$Json$Decode.$int),
+      A2($Json$Decode._op[":="],"name",$Json$Decode.string),
+      parseAmount,
+      A2($Json$Decode._op[":="],"foods",$Json$Decode.list(parseSubIngredient)));
+      return A2($Json$Decode.map,indexed,A2($Json$Decode.map,C,food));
+   }();
    var I = function (a) {    return {ctor: "I",_0: a};};
-   var parseIngredient = A2($Json$Decode.map,
-   I,
-   A5($Json$Decode.object4,
-   IngredientJson,
-   A2($Json$Decode._op[":="],"id",$Json$Decode.$int),
-   A2($Json$Decode._op[":="],"name",$Json$Decode.string),
-   parseAmount,
-   A2($Json$Decode._op[":="],"calories",$Json$Decode.$float)));
-   var jsonToFoods = $Json$Decode.list($Json$Decode.oneOf(_U.list([parseIngredient,parseCompoundFood])));
+   var parseIngredient = function () {
+      var food = A5($Json$Decode.object4,
+      IngredientJson,
+      A2($Json$Decode._op[":="],"id",$Json$Decode.$int),
+      A2($Json$Decode._op[":="],"name",$Json$Decode.string),
+      parseAmount,
+      A2($Json$Decode._op[":="],"calories",$Json$Decode.$float));
+      return A2($Json$Decode.map,indexed,A2($Json$Decode.map,I,food));
+   }();
+   var jsonToFoods = A2($Json$Decode.map,$Dict.fromList,$Json$Decode.list($Json$Decode.oneOf(_U.list([parseIngredient,parseCompoundFood]))));
    return _elm.FoodJson.values = {_op: _op,jsonToFoods: jsonToFoods,I: I,C: C};
 };
 Elm.Grid = Elm.Grid || {};
@@ -10993,6 +10999,7 @@ Elm.Main.make = function (_elm) {
    $Basics = Elm.Basics.make(_elm),
    $Card = Elm.Card.make(_elm),
    $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
    $FoodJson = Elm.FoodJson.make(_elm),
    $Grid = Elm.Grid.make(_elm),
    $Html = Elm.Html.make(_elm),
@@ -11007,12 +11014,12 @@ Elm.Main.make = function (_elm) {
    var _op = {};
    var foodsList = function (_p0) {
       var _p1 = _p0;
-      var columns = _U.list([{name: "Name",fn: function (_p2) {    var _p3 = _p2;return $Model.name(_p3.food);}}
-                            ,{name: "Amount",fn: function (_p4) {    var _p5 = _p4;return $Basics.toString($Model.amount(_p5.food));}}
+      var columns = _U.list([{name: "Name",fn: function (_p2) {    var _p3 = _p2;return _p3.food.name;}}
+                            ,{name: "Amount",fn: function (_p4) {    var _p5 = _p4;return $Basics.toString(_p5.food.amount);}}
                             ,{name: "Calories",fn: function (instance) {    return $Basics.toString($Model.calories(instance));}}]);
       return $Card.card(_U.list([A2($Grid.grid,columns,_p1.foods)]));
    };
-   var update = F2(function (a,m) {    return m;});
+   var main2 = $Styles.render(foodsList({foods: _U.list([])}));
    var foodResults = $Signal.mailbox($Result.Err(""));
    var foodRequests = Elm.Native.Task.make(_elm).perform(A2($Task.andThen,
    $Task.toResult(A2($Task.mapError,
@@ -11034,29 +11041,5 @@ Elm.Main.make = function (_elm) {
    },
    foodResults.signal);
    var Not = {ctor: "Not"};
-   var chipotleBlackBeans = $Model.Ingredient({name: "Chipotle Black Beans",calories: 70,amount: $Model.Grams(80)});
-   var chipotleFajitaVegetables = $Model.Ingredient({name: "Chipotle Fajita Vegetables",calories: 20,amount: $Model.Grams(30)});
-   var chipotleChicken = $Model.Ingredient({name: "Chipotle Chicken",calories: 160,amount: $Model.Grams(100)});
-   var burritoBowl = $Model.Food({name: "Burrito Bowl",amount: $Model.Ounces(8),items: _U.list([chipotleChicken,chipotleFajitaVegetables,chipotleBlackBeans])});
-   var chickenBreast = $Model.Ingredient({name: "Chicken Breast",calories: 1,amount: $Model.Grams(50)});
-   var groundBeef = $Model.Ingredient({name: "Ground Beef",calories: 332.1,amount: $Model.Ounces(4)});
-   var model = {foods: _U.list([{food: groundBeef,amount: $Model.Ounces(2)}
-                               ,{food: chickenBreast,amount: $Model.Grams(100)}
-                               ,{food: burritoBowl,amount: $Model.Ounces(8)}])
-               ,currentMonth: "March"};
-   var main2 = $Styles.render(foodsList(model));
-   return _elm.Main.values = {_op: _op
-                             ,groundBeef: groundBeef
-                             ,chickenBreast: chickenBreast
-                             ,chipotleChicken: chipotleChicken
-                             ,chipotleFajitaVegetables: chipotleFajitaVegetables
-                             ,chipotleBlackBeans: chipotleBlackBeans
-                             ,burritoBowl: burritoBowl
-                             ,model: model
-                             ,Not: Not
-                             ,foodResults: foodResults
-                             ,update: update
-                             ,main: main
-                             ,main2: main2
-                             ,foodsList: foodsList};
+   return _elm.Main.values = {_op: _op,Not: Not,foodResults: foodResults,main: main,main2: main2,foodsList: foodsList};
 };

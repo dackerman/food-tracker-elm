@@ -1,6 +1,5 @@
 module FoodJson
   ( jsonToFoods
-  , FoodJson(..)
   ) where
 
 import Json.Decode as Json exposing
@@ -14,56 +13,49 @@ import Json.Decode as Json exposing
   , tuple2
   , customDecoder)
 
-import Model exposing (..)
+import Dict exposing (Dict)
 
-type FoodJson = I IngredientJson
-              | C CompoundFoodJson
+import Foods exposing (..)
 
-type alias IngredientJson =
-  { id : Int
-  , name : String
-  , amount : Measurement
-  , calories : Float
-  }
-
-type alias CompoundFoodJson =
-  { id : Int
-  , name : String
-  , amount : Measurement
-  , items : List SubIngredientJson
-  }
-
-type alias SubIngredientJson =
-  { id : Int
-  , amount : Measurement
-  }
-
-jsonToFoods : Json.Decoder (List FoodJson)
+jsonToFoods : Json.Decoder (Dict Int Food)
 jsonToFoods =
-  Json.list (oneOf [parseIngredient, parseCompoundFood])
+  Json.list (oneOf [parseIngredient, parseRecipe])
+    |> Json.map Dict.fromList
 
-parseIngredient : Json.Decoder FoodJson
+parseIngredient : Json.Decoder (Int, Food)
 parseIngredient =
-  Json.map I <| object4
-        IngredientJson
-        ("id" := int)
-        ("name" := string)
-        parseAmount
-        ("calories" := float)
+  let food = object4
+             Ingredient
+             ("id" := int)
+             ("name" := string)
+             parseAmount
+             ("calories" := float)
+  in food
+    |> (Json.map I)
+    |> (Json.map indexed)
 
-parseCompoundFood : Json.Decoder FoodJson
-parseCompoundFood =
-  Json.map C <| object4
-      CompoundFoodJson
-        ("id" := int)
-        ("name" := string)
-        parseAmount
-        ("foods" := (Json.list parseSubIngredient))
+parseRecipe : Json.Decoder (Int, Food)
+parseRecipe =
+  let food = object4
+             Recipe
+               ("id" := int)
+               ("name" := string)
+               parseAmount
+               ("foods" := (Json.list parseIngredientRef))
+  in food
+    |> (Json.map C)
+    |> (Json.map indexed)
 
-parseSubIngredient : Json.Decoder SubIngredientJson
-parseSubIngredient =
+indexed : Food -> (Int, Food)
+indexed food =
+  case food of
+    C contents -> (contents.id, food)
+    I contents -> (contents.id, food)
+
+parseIngredientRef : Json.Decoder IngredientRef
+parseIngredientRef =
   object2
-    SubIngredientJson
+    IngredientRef
     ("id" := int)
     parseAmount
 
