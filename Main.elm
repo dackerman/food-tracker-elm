@@ -8,6 +8,7 @@ import Maybe exposing (Maybe(..), withDefault)
 import Model exposing (..)
 import Styles exposing (..)
 import Grid exposing (..)
+import Card exposing (..)
 
 groundBeef : Food
 groundBeef = Ingredient
@@ -80,7 +81,8 @@ main = render <| foodsList model
 
 foodsList : Model -> Node
 foodsList {foods} =
-  grid [ (\{food} -> name food)
-       , (\{food} -> toString <| amount food)
-       , (\instance -> toString <| calories instance)
-       ] foods
+  let columns = [ { name = "Name", fn = (\{food} -> name food) }
+                , { name = "Amount", fn = (\{food} -> toString <| amount food) }
+                , { name = "Calories", fn = (\instance -> toString <| calories instance) }
+                ]
+  in card [ grid columns foods ]

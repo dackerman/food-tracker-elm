@@ -1,6 +1,7 @@
 body {
     margin: 0;
-    font-family: 'helvetica';
+    font-family: 'Roboto', sans-serif;
+    color: #303030;
 }
 
 div {
