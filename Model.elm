@@ -46,6 +46,7 @@ type Measurement
   | Ounces Quantity
   | Grams Quantity
   | Milligrams Quantity
+  | Container Quantity
 
 ratio : Measurement -> Measurement -> Float
 ratio mA mB =
@@ -58,6 +59,7 @@ normalized m =
     Pounds a -> 0.0625 * a
     Grams a -> 28.3495 * a
     Milligrams a -> 28349.5 * a
+    Container a -> 1 * a
 
 type Macro = Macro Protein Fat Carb
 

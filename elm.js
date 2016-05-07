@@ -3742,6 +3742,116 @@ Elm.Native.Signal.make = function(localRuntime) {
 	};
 };
 
+Elm.Native.Time = {};
+
+Elm.Native.Time.make = function(localRuntime)
+{
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Time = localRuntime.Native.Time || {};
+	if (localRuntime.Native.Time.values)
+	{
+		return localRuntime.Native.Time.values;
+	}
+
+	var NS = Elm.Native.Signal.make(localRuntime);
+	var Maybe = Elm.Maybe.make(localRuntime);
+
+
+	// FRAMES PER SECOND
+
+	function fpsWhen(desiredFPS, isOn)
+	{
+		var msPerFrame = 1000 / desiredFPS;
+		var ticker = NS.input('fps-' + desiredFPS, null);
+
+		function notifyTicker()
+		{
+			localRuntime.notify(ticker.id, null);
+		}
+
+		function firstArg(x, y)
+		{
+			return x;
+		}
+
+		// input fires either when isOn changes, or when ticker fires.
+		// Its value is a tuple with the current timestamp, and the state of isOn
+		var input = NS.timestamp(A3(NS.map2, F2(firstArg), NS.dropRepeats(isOn), ticker));
+
+		var initialState = {
+			isOn: false,
+			time: localRuntime.timer.programStart,
+			delta: 0
+		};
+
+		var timeoutId;
+
+		function update(input, state)
+		{
+			var currentTime = input._0;
+			var isOn = input._1;
+			var wasOn = state.isOn;
+			var previousTime = state.time;
+
+			if (isOn)
+			{
+				timeoutId = localRuntime.setTimeout(notifyTicker, msPerFrame);
+			}
+			else if (wasOn)
+			{
+				clearTimeout(timeoutId);
+			}
+
+			return {
+				isOn: isOn,
+				time: currentTime,
+				delta: (isOn && !wasOn) ? 0 : currentTime - previousTime
+			};
+		}
+
+		return A2(
+			NS.map,
+			function(state) { return state.delta; },
+			A3(NS.foldp, F2(update), update(input.value, initialState), input)
+		);
+	}
+
+
+	// EVERY
+
+	function every(t)
+	{
+		var ticker = NS.input('every-' + t, null);
+		function tellTime()
+		{
+			localRuntime.notify(ticker.id, null);
+		}
+		var clock = A2(NS.map, fst, NS.timestamp(ticker));
+		setInterval(tellTime, t);
+		return clock;
+	}
+
+
+	function fst(pair)
+	{
+		return pair._0;
+	}
+
+
+	function read(s)
+	{
+		var t = Date.parse(s);
+		return isNaN(t) ? Maybe.Nothing : Maybe.Just(t);
+	}
+
+	return localRuntime.Native.Time.values = {
+		fpsWhen: F2(fpsWhen),
+		every: every,
+		toDate: function(t) { return new Date(t); },
+		read: read
+	};
+};
+
 Elm.Native.Transform2D = {};
 Elm.Native.Transform2D.make = function(localRuntime) {
 	localRuntime.Native = localRuntime.Native || {};
@@ -6516,6 +6626,52 @@ Elm.Signal.make = function (_elm) {
                                ,message: message
                                ,forwardTo: forwardTo
                                ,Mailbox: Mailbox};
+};
+Elm.Time = Elm.Time || {};
+Elm.Time.make = function (_elm) {
+   "use strict";
+   _elm.Time = _elm.Time || {};
+   if (_elm.Time.values) return _elm.Time.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Native$Signal = Elm.Native.Signal.make(_elm),
+   $Native$Time = Elm.Native.Time.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var delay = $Native$Signal.delay;
+   var since = F2(function (time,signal) {
+      var stop = A2($Signal.map,$Basics.always(-1),A2(delay,time,signal));
+      var start = A2($Signal.map,$Basics.always(1),signal);
+      var delaydiff = A3($Signal.foldp,F2(function (x,y) {    return x + y;}),0,A2($Signal.merge,start,stop));
+      return A2($Signal.map,F2(function (x,y) {    return !_U.eq(x,y);})(0),delaydiff);
+   });
+   var timestamp = $Native$Signal.timestamp;
+   var every = $Native$Time.every;
+   var fpsWhen = $Native$Time.fpsWhen;
+   var fps = function (targetFrames) {    return A2(fpsWhen,targetFrames,$Signal.constant(true));};
+   var inMilliseconds = function (t) {    return t;};
+   var millisecond = 1;
+   var second = 1000 * millisecond;
+   var minute = 60 * second;
+   var hour = 60 * minute;
+   var inHours = function (t) {    return t / hour;};
+   var inMinutes = function (t) {    return t / minute;};
+   var inSeconds = function (t) {    return t / second;};
+   return _elm.Time.values = {_op: _op
+                             ,millisecond: millisecond
+                             ,second: second
+                             ,minute: minute
+                             ,hour: hour
+                             ,inMilliseconds: inMilliseconds
+                             ,inSeconds: inSeconds
+                             ,inMinutes: inMinutes
+                             ,inHours: inHours
+                             ,fps: fps
+                             ,fpsWhen: fpsWhen
+                             ,every: every
+                             ,timestamp: timestamp
+                             ,delay: delay
+                             ,since: since};
 };
 Elm.Native.String = {};
 
@@ -10220,6 +10376,310 @@ Elm.Html.Attributes.make = function (_elm) {
                                         ,property: property
                                         ,attribute: attribute};
 };
+Elm.Native.Http = {};
+Elm.Native.Http.make = function(localRuntime) {
+
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Http = localRuntime.Native.Http || {};
+	if (localRuntime.Native.Http.values)
+	{
+		return localRuntime.Native.Http.values;
+	}
+
+	var Dict = Elm.Dict.make(localRuntime);
+	var List = Elm.List.make(localRuntime);
+	var Maybe = Elm.Maybe.make(localRuntime);
+	var Task = Elm.Native.Task.make(localRuntime);
+
+
+	function send(settings, request)
+	{
+		return Task.asyncFunction(function(callback) {
+			var req = new XMLHttpRequest();
+
+			// start
+			if (settings.onStart.ctor === 'Just')
+			{
+				req.addEventListener('loadStart', function() {
+					var task = settings.onStart._0;
+					Task.spawn(task);
+				});
+			}
+
+			// progress
+			if (settings.onProgress.ctor === 'Just')
+			{
+				req.addEventListener('progress', function(event) {
+					var progress = !event.lengthComputable
+						? Maybe.Nothing
+						: Maybe.Just({
+							_: {},
+							loaded: event.loaded,
+							total: event.total
+						});
+					var task = settings.onProgress._0(progress);
+					Task.spawn(task);
+				});
+			}
+
+			// end
+			req.addEventListener('error', function() {
+				return callback(Task.fail({ ctor: 'RawNetworkError' }));
+			});
+
+			req.addEventListener('timeout', function() {
+				return callback(Task.fail({ ctor: 'RawTimeout' }));
+			});
+
+			req.addEventListener('load', function() {
+				return callback(Task.succeed(toResponse(req)));
+			});
+
+			req.open(request.verb, request.url, true);
+
+			// set all the headers
+			function setHeader(pair) {
+				req.setRequestHeader(pair._0, pair._1);
+			}
+			A2(List.map, setHeader, request.headers);
+
+			// set the timeout
+			req.timeout = settings.timeout;
+
+			// enable this withCredentials thing
+			req.withCredentials = settings.withCredentials;
+
+			// ask for a specific MIME type for the response
+			if (settings.desiredResponseType.ctor === 'Just')
+			{
+				req.overrideMimeType(settings.desiredResponseType._0);
+			}
+
+			// actuall send the request
+			if(request.body.ctor === "BodyFormData")
+			{
+				req.send(request.body.formData)
+			}
+			else
+			{
+				req.send(request.body._0);
+			}
+		});
+	}
+
+
+	// deal with responses
+
+	function toResponse(req)
+	{
+		var tag = req.responseType === 'blob' ? 'Blob' : 'Text'
+		var response = tag === 'Blob' ? req.response : req.responseText;
+		return {
+			_: {},
+			status: req.status,
+			statusText: req.statusText,
+			headers: parseHeaders(req.getAllResponseHeaders()),
+			url: req.responseURL,
+			value: { ctor: tag, _0: response }
+		};
+	}
+
+
+	function parseHeaders(rawHeaders)
+	{
+		var headers = Dict.empty;
+
+		if (!rawHeaders)
+		{
+			return headers;
+		}
+
+		var headerPairs = rawHeaders.split('\u000d\u000a');
+		for (var i = headerPairs.length; i--; )
+		{
+			var headerPair = headerPairs[i];
+			var index = headerPair.indexOf('\u003a\u0020');
+			if (index > 0)
+			{
+				var key = headerPair.substring(0, index);
+				var value = headerPair.substring(index + 2);
+
+				headers = A3(Dict.update, key, function(oldValue) {
+					if (oldValue.ctor === 'Just')
+					{
+						return Maybe.Just(value + ', ' + oldValue._0);
+					}
+					return Maybe.Just(value);
+				}, headers);
+			}
+		}
+
+		return headers;
+	}
+
+
+	function multipart(dataList)
+	{
+		var formData = new FormData();
+
+		while (dataList.ctor !== '[]')
+		{
+			var data = dataList._0;
+			if (data.ctor === 'StringData')
+			{
+				formData.append(data._0, data._1);
+			}
+			else
+			{
+				var fileName = data._1.ctor === 'Nothing'
+					? undefined
+					: data._1._0;
+				formData.append(data._0, data._2, fileName);
+			}
+			dataList = dataList._1;
+		}
+
+		return { ctor: 'BodyFormData', formData: formData };
+	}
+
+
+	function uriEncode(string)
+	{
+		return encodeURIComponent(string);
+	}
+
+	function uriDecode(string)
+	{
+		return decodeURIComponent(string);
+	}
+
+	return localRuntime.Native.Http.values = {
+		send: F2(send),
+		multipart: multipart,
+		uriEncode: uriEncode,
+		uriDecode: uriDecode
+	};
+};
+
+Elm.Http = Elm.Http || {};
+Elm.Http.make = function (_elm) {
+   "use strict";
+   _elm.Http = _elm.Http || {};
+   if (_elm.Http.values) return _elm.Http.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Native$Http = Elm.Native.Http.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm),
+   $Task = Elm.Task.make(_elm),
+   $Time = Elm.Time.make(_elm);
+   var _op = {};
+   var send = $Native$Http.send;
+   var BadResponse = F2(function (a,b) {    return {ctor: "BadResponse",_0: a,_1: b};});
+   var UnexpectedPayload = function (a) {    return {ctor: "UnexpectedPayload",_0: a};};
+   var handleResponse = F2(function (handle,response) {
+      if (_U.cmp(200,response.status) < 1 && _U.cmp(response.status,300) < 0) {
+            var _p0 = response.value;
+            if (_p0.ctor === "Text") {
+                  return handle(_p0._0);
+               } else {
+                  return $Task.fail(UnexpectedPayload("Response body is a blob, expecting a string."));
+               }
+         } else return $Task.fail(A2(BadResponse,response.status,response.statusText));
+   });
+   var NetworkError = {ctor: "NetworkError"};
+   var Timeout = {ctor: "Timeout"};
+   var promoteError = function (rawError) {    var _p1 = rawError;if (_p1.ctor === "RawTimeout") {    return Timeout;} else {    return NetworkError;}};
+   var fromJson = F2(function (decoder,response) {
+      var decode = function (str) {
+         var _p2 = A2($Json$Decode.decodeString,decoder,str);
+         if (_p2.ctor === "Ok") {
+               return $Task.succeed(_p2._0);
+            } else {
+               return $Task.fail(UnexpectedPayload(_p2._0));
+            }
+      };
+      return A2($Task.andThen,A2($Task.mapError,promoteError,response),handleResponse(decode));
+   });
+   var RawNetworkError = {ctor: "RawNetworkError"};
+   var RawTimeout = {ctor: "RawTimeout"};
+   var Blob = function (a) {    return {ctor: "Blob",_0: a};};
+   var Text = function (a) {    return {ctor: "Text",_0: a};};
+   var Response = F5(function (a,b,c,d,e) {    return {status: a,statusText: b,headers: c,url: d,value: e};});
+   var defaultSettings = {timeout: 0,onStart: $Maybe.Nothing,onProgress: $Maybe.Nothing,desiredResponseType: $Maybe.Nothing,withCredentials: false};
+   var post = F3(function (decoder,url,body) {
+      var request = {verb: "POST",headers: _U.list([]),url: url,body: body};
+      return A2(fromJson,decoder,A2(send,defaultSettings,request));
+   });
+   var Settings = F5(function (a,b,c,d,e) {    return {timeout: a,onStart: b,onProgress: c,desiredResponseType: d,withCredentials: e};});
+   var multipart = $Native$Http.multipart;
+   var FileData = F3(function (a,b,c) {    return {ctor: "FileData",_0: a,_1: b,_2: c};});
+   var BlobData = F3(function (a,b,c) {    return {ctor: "BlobData",_0: a,_1: b,_2: c};});
+   var blobData = BlobData;
+   var StringData = F2(function (a,b) {    return {ctor: "StringData",_0: a,_1: b};});
+   var stringData = StringData;
+   var BodyBlob = function (a) {    return {ctor: "BodyBlob",_0: a};};
+   var BodyFormData = {ctor: "BodyFormData"};
+   var ArrayBuffer = {ctor: "ArrayBuffer"};
+   var BodyString = function (a) {    return {ctor: "BodyString",_0: a};};
+   var string = BodyString;
+   var Empty = {ctor: "Empty"};
+   var empty = Empty;
+   var getString = function (url) {
+      var request = {verb: "GET",headers: _U.list([]),url: url,body: empty};
+      return A2($Task.andThen,A2($Task.mapError,promoteError,A2(send,defaultSettings,request)),handleResponse($Task.succeed));
+   };
+   var get = F2(function (decoder,url) {
+      var request = {verb: "GET",headers: _U.list([]),url: url,body: empty};
+      return A2(fromJson,decoder,A2(send,defaultSettings,request));
+   });
+   var Request = F4(function (a,b,c,d) {    return {verb: a,headers: b,url: c,body: d};});
+   var uriDecode = $Native$Http.uriDecode;
+   var uriEncode = $Native$Http.uriEncode;
+   var queryEscape = function (string) {    return A2($String.join,"+",A2($String.split,"%20",uriEncode(string)));};
+   var queryPair = function (_p3) {    var _p4 = _p3;return A2($Basics._op["++"],queryEscape(_p4._0),A2($Basics._op["++"],"=",queryEscape(_p4._1)));};
+   var url = F2(function (baseUrl,args) {
+      var _p5 = args;
+      if (_p5.ctor === "[]") {
+            return baseUrl;
+         } else {
+            return A2($Basics._op["++"],baseUrl,A2($Basics._op["++"],"?",A2($String.join,"&",A2($List.map,queryPair,args))));
+         }
+   });
+   var TODO_implement_file_in_another_library = {ctor: "TODO_implement_file_in_another_library"};
+   var TODO_implement_blob_in_another_library = {ctor: "TODO_implement_blob_in_another_library"};
+   return _elm.Http.values = {_op: _op
+                             ,getString: getString
+                             ,get: get
+                             ,post: post
+                             ,send: send
+                             ,url: url
+                             ,uriEncode: uriEncode
+                             ,uriDecode: uriDecode
+                             ,empty: empty
+                             ,string: string
+                             ,multipart: multipart
+                             ,stringData: stringData
+                             ,defaultSettings: defaultSettings
+                             ,fromJson: fromJson
+                             ,Request: Request
+                             ,Settings: Settings
+                             ,Response: Response
+                             ,Text: Text
+                             ,Blob: Blob
+                             ,Timeout: Timeout
+                             ,NetworkError: NetworkError
+                             ,UnexpectedPayload: UnexpectedPayload
+                             ,BadResponse: BadResponse
+                             ,RawTimeout: RawTimeout
+                             ,RawNetworkError: RawNetworkError};
+};
 Elm.Styles = Elm.Styles || {};
 Elm.Styles.make = function (_elm) {
    "use strict";
@@ -10357,6 +10817,134 @@ Elm.Card.make = function (_elm) {
    };
    return _elm.Card.values = {_op: _op,card: card};
 };
+Elm.Model = Elm.Model || {};
+Elm.Model.make = function (_elm) {
+   "use strict";
+   _elm.Model = _elm.Model || {};
+   if (_elm.Model.values) return _elm.Model.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var foodCalories = function (food) {
+      var _p0 = food;
+      if (_p0.ctor === "Ingredient") {
+            return _p0._0.calories;
+         } else {
+            return A3($List.foldl,F2(function (x,y) {    return x + y;}),0,A2($List.map,foodCalories,_p0._0.items));
+         }
+   };
+   var Macro = F3(function (a,b,c) {    return {ctor: "Macro",_0: a,_1: b,_2: c};});
+   var normalized = function (m) {
+      var _p1 = m;
+      switch (_p1.ctor)
+      {case "Ounces": return 1 * _p1._0;
+         case "Pounds": return 6.25e-2 * _p1._0;
+         case "Grams": return 28.3495 * _p1._0;
+         case "Milligrams": return 28349.5 * _p1._0;
+         default: return 1 * _p1._0;}
+   };
+   var ratio = F2(function (mA,mB) {    return normalized(mB) / normalized(mA);});
+   var calories = function (foodInstance) {
+      var food = foodInstance.food;
+      var amount = function () {    var _p2 = food;if (_p2.ctor === "Food") {    return _p2._0.amount;} else {    return _p2._0.amount;}}();
+      var proportion = A2(ratio,amount,foodInstance.amount);
+      var caloriesForFood = foodCalories(food);
+      return proportion * caloriesForFood;
+   };
+   var Container = function (a) {    return {ctor: "Container",_0: a};};
+   var Milligrams = function (a) {    return {ctor: "Milligrams",_0: a};};
+   var Grams = function (a) {    return {ctor: "Grams",_0: a};};
+   var Ounces = function (a) {    return {ctor: "Ounces",_0: a};};
+   var Pounds = function (a) {    return {ctor: "Pounds",_0: a};};
+   var Ingredient = function (a) {    return {ctor: "Ingredient",_0: a};};
+   var Food = function (a) {    return {ctor: "Food",_0: a};};
+   var amount = function (f) {    var _p3 = f;if (_p3.ctor === "Food") {    return _p3._0.amount;} else {    return _p3._0.amount;}};
+   var name = function (f) {    var _p4 = f;if (_p4.ctor === "Food") {    return _p4._0.name;} else {    return _p4._0.name;}};
+   var FoodInstance = F2(function (a,b) {    return {food: a,amount: b};});
+   var Model = F2(function (a,b) {    return {foods: a,currentMonth: b};});
+   return _elm.Model.values = {_op: _op
+                              ,Model: Model
+                              ,FoodInstance: FoodInstance
+                              ,name: name
+                              ,amount: amount
+                              ,Food: Food
+                              ,Ingredient: Ingredient
+                              ,Pounds: Pounds
+                              ,Ounces: Ounces
+                              ,Grams: Grams
+                              ,Milligrams: Milligrams
+                              ,Container: Container
+                              ,ratio: ratio
+                              ,normalized: normalized
+                              ,Macro: Macro
+                              ,foodCalories: foodCalories
+                              ,calories: calories};
+};
+Elm.FoodJson = Elm.FoodJson || {};
+Elm.FoodJson.make = function (_elm) {
+   "use strict";
+   _elm.FoodJson = _elm.FoodJson || {};
+   if (_elm.FoodJson.values) return _elm.FoodJson.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Model = Elm.Model.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var parseAmount = function () {
+      var parseTuple = A3($Json$Decode.object2,
+      F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),
+      A2($Json$Decode._op[":="],"amount",$Json$Decode.$float),
+      A2($Json$Decode._op[":="],"units",$Json$Decode.string));
+      var tryParseAmount = function (_p0) {
+         var _p1 = _p0;
+         var _p4 = _p1._1;
+         var _p3 = _p1._0;
+         var _p2 = _p4;
+         switch (_p2)
+         {case "pounds": return $Result.Ok($Model.Pounds(_p3));
+            case "ounces": return $Result.Ok($Model.Ounces(_p3));
+            case "grams": return $Result.Ok($Model.Grams(_p3));
+            case "milligrams": return $Result.Ok($Model.Milligrams(_p3));
+            case "container": return $Result.Ok($Model.Container(_p3));
+            default: return $Result.Err(A2($Basics._op["++"],"Invalid units: ",_p4));}
+      };
+      return A2($Json$Decode.customDecoder,parseTuple,tryParseAmount);
+   }();
+   var SubIngredientJson = F2(function (a,b) {    return {id: a,amount: b};});
+   var parseSubIngredient = A3($Json$Decode.object2,SubIngredientJson,A2($Json$Decode._op[":="],"id",$Json$Decode.$int),parseAmount);
+   var CompoundFoodJson = F4(function (a,b,c,d) {    return {id: a,name: b,amount: c,items: d};});
+   var IngredientJson = F4(function (a,b,c,d) {    return {id: a,name: b,amount: c,calories: d};});
+   var C = function (a) {    return {ctor: "C",_0: a};};
+   var parseCompoundFood = A2($Json$Decode.map,
+   C,
+   A5($Json$Decode.object4,
+   CompoundFoodJson,
+   A2($Json$Decode._op[":="],"id",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"name",$Json$Decode.string),
+   parseAmount,
+   A2($Json$Decode._op[":="],"foods",$Json$Decode.list(parseSubIngredient))));
+   var I = function (a) {    return {ctor: "I",_0: a};};
+   var parseIngredient = A2($Json$Decode.map,
+   I,
+   A5($Json$Decode.object4,
+   IngredientJson,
+   A2($Json$Decode._op[":="],"id",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"name",$Json$Decode.string),
+   parseAmount,
+   A2($Json$Decode._op[":="],"calories",$Json$Decode.$float)));
+   var jsonToFoods = $Json$Decode.list($Json$Decode.oneOf(_U.list([parseIngredient,parseCompoundFood])));
+   return _elm.FoodJson.values = {_op: _op,jsonToFoods: jsonToFoods,I: I,C: C};
+};
 Elm.Grid = Elm.Grid || {};
 Elm.Grid.make = function (_elm) {
    "use strict";
@@ -10396,71 +10984,6 @@ Elm.Grid.make = function (_elm) {
    var ColumnDef = F2(function (a,b) {    return {name: a,fn: b};});
    return _elm.Grid.values = {_op: _op,grid: grid};
 };
-Elm.Model = Elm.Model || {};
-Elm.Model.make = function (_elm) {
-   "use strict";
-   _elm.Model = _elm.Model || {};
-   if (_elm.Model.values) return _elm.Model.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
-   var _op = {};
-   var foodCalories = function (food) {
-      var _p0 = food;
-      if (_p0.ctor === "Ingredient") {
-            return _p0._0.calories;
-         } else {
-            return A3($List.foldl,F2(function (x,y) {    return x + y;}),0,A2($List.map,foodCalories,_p0._0.items));
-         }
-   };
-   var Macro = F3(function (a,b,c) {    return {ctor: "Macro",_0: a,_1: b,_2: c};});
-   var normalized = function (m) {
-      var _p1 = m;
-      switch (_p1.ctor)
-      {case "Ounces": return 1 * _p1._0;
-         case "Pounds": return 6.25e-2 * _p1._0;
-         case "Grams": return 28.3495 * _p1._0;
-         default: return 28349.5 * _p1._0;}
-   };
-   var ratio = F2(function (mA,mB) {    return normalized(mB) / normalized(mA);});
-   var calories = function (foodInstance) {
-      var food = foodInstance.food;
-      var amount = function () {    var _p2 = food;if (_p2.ctor === "Food") {    return _p2._0.amount;} else {    return _p2._0.amount;}}();
-      var proportion = A2(ratio,amount,foodInstance.amount);
-      var caloriesForFood = foodCalories(food);
-      return proportion * caloriesForFood;
-   };
-   var Milligrams = function (a) {    return {ctor: "Milligrams",_0: a};};
-   var Grams = function (a) {    return {ctor: "Grams",_0: a};};
-   var Ounces = function (a) {    return {ctor: "Ounces",_0: a};};
-   var Pounds = function (a) {    return {ctor: "Pounds",_0: a};};
-   var Ingredient = function (a) {    return {ctor: "Ingredient",_0: a};};
-   var Food = function (a) {    return {ctor: "Food",_0: a};};
-   var amount = function (f) {    var _p3 = f;if (_p3.ctor === "Food") {    return _p3._0.amount;} else {    return _p3._0.amount;}};
-   var name = function (f) {    var _p4 = f;if (_p4.ctor === "Food") {    return _p4._0.name;} else {    return _p4._0.name;}};
-   var FoodInstance = F2(function (a,b) {    return {food: a,amount: b};});
-   var Model = F2(function (a,b) {    return {foods: a,currentMonth: b};});
-   return _elm.Model.values = {_op: _op
-                              ,Model: Model
-                              ,FoodInstance: FoodInstance
-                              ,name: name
-                              ,amount: amount
-                              ,Food: Food
-                              ,Ingredient: Ingredient
-                              ,Pounds: Pounds
-                              ,Ounces: Ounces
-                              ,Grams: Grams
-                              ,Milligrams: Milligrams
-                              ,ratio: ratio
-                              ,normalized: normalized
-                              ,Macro: Macro
-                              ,foodCalories: foodCalories
-                              ,calories: calories};
-};
 Elm.Main = Elm.Main || {};
 Elm.Main.make = function (_elm) {
    "use strict";
@@ -10470,13 +10993,17 @@ Elm.Main.make = function (_elm) {
    $Basics = Elm.Basics.make(_elm),
    $Card = Elm.Card.make(_elm),
    $Debug = Elm.Debug.make(_elm),
+   $FoodJson = Elm.FoodJson.make(_elm),
    $Grid = Elm.Grid.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Http = Elm.Http.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Model = Elm.Model.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
-   $Styles = Elm.Styles.make(_elm);
+   $Styles = Elm.Styles.make(_elm),
+   $Task = Elm.Task.make(_elm);
    var _op = {};
    var foodsList = function (_p0) {
       var _p1 = _p0;
@@ -10486,6 +11013,26 @@ Elm.Main.make = function (_elm) {
       return $Card.card(_U.list([A2($Grid.grid,columns,_p1.foods)]));
    };
    var update = F2(function (a,m) {    return m;});
+   var foodResults = $Signal.mailbox($Result.Err(""));
+   var foodRequests = Elm.Native.Task.make(_elm).perform(A2($Task.andThen,
+   $Task.toResult(A2($Task.mapError,
+   function (e) {
+      var _p6 = e;
+      if (_p6.ctor === "UnexpectedPayload") {
+            return _p6._0;
+         } else {
+            return $Basics.toString(_p6);
+         }
+   },
+   A2($Http.get,$FoodJson.jsonToFoods,"http://localhost:3000/foods"))),
+   $Signal.send(foodResults.address)));
+   var main = A2($Signal.map,
+   function (v) {
+      return A2($Html.pre,
+      _U.list([]),
+      _U.list([$Html.text(function () {    var _p7 = v;if (_p7.ctor === "Err") {    return _p7._0;} else {    return $Basics.toString(_p7);}}())]));
+   },
+   foodResults.signal);
    var Not = {ctor: "Not"};
    var chipotleBlackBeans = $Model.Ingredient({name: "Chipotle Black Beans",calories: 70,amount: $Model.Grams(80)});
    var chipotleFajitaVegetables = $Model.Ingredient({name: "Chipotle Fajita Vegetables",calories: 20,amount: $Model.Grams(30)});
@@ -10497,7 +11044,7 @@ Elm.Main.make = function (_elm) {
                                ,{food: chickenBreast,amount: $Model.Grams(100)}
                                ,{food: burritoBowl,amount: $Model.Ounces(8)}])
                ,currentMonth: "March"};
-   var main = $Styles.render(foodsList(model));
+   var main2 = $Styles.render(foodsList(model));
    return _elm.Main.values = {_op: _op
                              ,groundBeef: groundBeef
                              ,chickenBreast: chickenBreast
@@ -10507,7 +11054,9 @@ Elm.Main.make = function (_elm) {
                              ,burritoBowl: burritoBowl
                              ,model: model
                              ,Not: Not
+                             ,foodResults: foodResults
                              ,update: update
                              ,main: main
+                             ,main2: main2
                              ,foodsList: foodsList};
 };

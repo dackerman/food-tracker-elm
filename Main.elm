@@ -4,11 +4,15 @@ import Html exposing (text, div, span, Attribute, Html)
 import Html.Attributes exposing (style)
 import List exposing (concat, map, append)
 import Maybe exposing (Maybe(..), withDefault)
+import Task exposing (..)
+
+import Http
 
 import Model exposing (..)
 import Styles exposing (..)
 import Grid exposing (..)
 import Card exposing (..)
+import FoodJson exposing (..)
 
 groundBeef : Food
 groundBeef = Ingredient
@@ -56,7 +60,6 @@ burritoBowl = Food
                 ]
               }
 
-
 model : Model
 model =
   { foods = [ { food = groundBeef
@@ -74,10 +77,26 @@ model =
 
 type Action = Not
 
+foodResults : Signal.Mailbox (Result String (List FoodJson))
+foodResults = Signal.mailbox (Err "")
+
+port foodRequests : Task x ()
+port foodRequests =
+  (Http.get jsonToFoods "http://localhost:3000/foods"
+  |> (mapError (\e -> case e of
+                        Http.UnexpectedPayload m -> m
+                        a -> toString a))
+  |> toResult)
+  `andThen` Signal.send foodResults.address
+
 update : Action -> Model -> Model
 update a m = m
 
-main = render <| foodsList model
+main = Signal.map (\v -> Html.pre [] [Html.text (case v of
+                                                  Err msg -> msg
+                                                  a -> toString a)]) foodResults.signal
+
+main2 = render <| foodsList model
 
 foodsList : Model -> Node
 foodsList {foods} =

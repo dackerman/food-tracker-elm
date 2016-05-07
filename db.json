@@ -1,23 +1,90 @@
 {
-    "foods": [
-        { "id": 1, "name": "Ground Beef", "calories": 332.1, "amount": 4, "units": "ounces" },
-        { "id": 2, "name": "Chicken Breast", "calories": 252, "amount": 5, "units": "ounces" },
-        { "id": 3, "name": "Chipotle Chicken", "calories": 160, "amount": 100, "units": "grams" },
-        { "id": 4, "name": "Chipotle Fajita Vegetables", "calories": 15, "amount": 20, "units": "grams" },
-        { "id": 5, "name": "Chipotle Black Beans", "calories": 120, "amount": 60, "units": "grams" },
-        { "id": 6, "name": "Burrito Bowl", "amount": 1, "units": "container", "foods": [
-            {"id": 3, "amount": 100, "units": "grams" },
-            {"id": 4, "amount": 20, "units": "grams" },
-            {"id": 5, "amount": 60, "units": "grams" }
-        ]}
-    ],
-    "users": [
-        { "id": 1, "username": "dackerman", "name": "david" }
-    ],
-    "foodLog": [
-        {"id": 1, "user": 1, "year": 2016, "month": 5, "day": 7, "foods": [
-            {"foodId": 6, "amount": 1, "units": "container"},
-            {"foodId": 1, "amount": 10, "units": "ounces"}
-        ]}
-    ]
+  "foods": [
+    {
+      "id": 1,
+      "name": "Ground Beef",
+      "calories": 332.1,
+      "amount": 4,
+      "units": "ounces"
+    },
+    {
+      "id": 2,
+      "name": "Chicken Breast",
+      "calories": 252,
+      "amount": 5,
+      "units": "ounces"
+    },
+    {
+      "id": 3,
+      "name": "Chipotle Chicken",
+      "calories": 160,
+      "amount": 100,
+      "units": "grams"
+    },
+    {
+      "id": 4,
+      "name": "Chipotle Fajita Vegetables",
+      "calories": 15,
+      "amount": 20,
+      "units": "grams"
+    },
+    {
+      "id": 5,
+      "name": "Chipotle Black Beans",
+      "calories": 120,
+      "amount": 60,
+      "units": "grams"
+    },
+    {
+      "id": 6,
+      "name": "Burrito Bowl",
+      "amount": 1,
+      "units": "container",
+      "foods": [
+        {
+          "id": 3,
+          "amount": 100,
+          "units": "grams"
+        },
+        {
+          "id": 4,
+          "amount": 20,
+          "units": "grams"
+        },
+        {
+          "id": 5,
+          "amount": 60,
+          "units": "grams"
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "username": "dackerman",
+      "name": "david"
+    }
+  ],
+  "foodLog": [
+    {
+      "id": 1,
+      "user": 1,
+      "year": 2016,
+      "month": 5,
+      "day": 7,
+      "foods": [
+        {
+          "foodId": 6,
+          "amount": 1,
+          "units": "container"
+        },
+        {
+          "foodId": 1,
+          "amount": 10,
+          "units": "ounces"
+        }
+      ]
+    }
+  ]
 }
