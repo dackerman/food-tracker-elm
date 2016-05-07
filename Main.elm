@@ -2,11 +2,12 @@ module Main where
 
 import Html exposing (text, div, span, Attribute, Html)
 import Html.Attributes exposing (style)
-import List exposing (concat, map)
+import List exposing (concat, map, append)
 import Maybe exposing (Maybe(..), withDefault)
 
 import Model exposing (..)
 import Styles exposing (..)
+import Grid exposing (..)
 
 row : String -> List Html -> Html
 row color inner =
@@ -84,8 +85,7 @@ type Action = Not
 update : Action -> Model -> Model
 update a m = m
 
-main =
-  div [ style pageStyle ] [ container model ]
+main = foodsList model
 
 container : Model -> Html
 container m =
@@ -107,23 +107,12 @@ content m =
   , foodsList m
   ]
 
-
 foodsList : Model -> Html
-foodsList model =
-  div [] (map foodItem model.foods)
-
-foodItem : FoodInstance -> Html
-foodItem foodInstance =
-  row white [ div [ style [ ("display", "flex")
-                          , ("justifyContent", "space-between")]
-                  ] [ foodColumn <| name foodInstance.food
-                    , foodColumn <| toString <| amount foodInstance.food
-                    , foodColumn <| toString <| calories foodInstance
-                    ]
-            ]
-
-foodColumn : String -> Html
-foodColumn val = span [style [("width", "20%")]] [text val]
+foodsList {foods} =
+  grid [ (\{food} -> name food)
+       , (\{food} -> toString <| amount food)
+       , (\instance -> toString <| calories instance)
+       ] foods
 
 calendarMonthChooser : Model -> Html
 calendarMonthChooser model =

@@ -10220,6 +10220,63 @@ Elm.Html.Attributes.make = function (_elm) {
                                         ,property: property
                                         ,attribute: attribute};
 };
+Elm.Grid = Elm.Grid || {};
+Elm.Grid.make = function (_elm) {
+   "use strict";
+   _elm.Grid = _elm.Grid || {};
+   if (_elm.Grid.values) return _elm.Grid.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var hStyle = $Html$Attributes.style;
+   var spacingStr = function (spacing) {    var _p0 = spacing;return A2($Basics._op["++"],$Basics.toString(_p0._0),"rem");};
+   var style = function (attr) {
+      var _p1 = attr;
+      if (_p1.ctor === "Padding") {
+            return {ctor: "_Tuple2",_0: "padding",_1: spacingStr(_p1._0)};
+         } else {
+            return {ctor: "_Tuple2",_0: "margin",_1: spacingStr(_p1._0)};
+         }
+   };
+   var render = function (node) {
+      var _p2 = node;
+      if (_p2.ctor === "Text") {
+            if (_p2._0.ctor === "[]") {
+                  return $Html.text(_p2._1);
+               } else {
+                  return A2($Html.div,_U.list([hStyle(A2($List.map,style,_p2._0))]),_U.list([$Html.text(_p2._1)]));
+               }
+         } else {
+            return A2($Html.div,_U.list([hStyle(A2($List.map,style,_p2._0))]),A2($List.map,render,_p2._1));
+         }
+   };
+   var Rem = function (a) {    return {ctor: "Rem",_0: a};};
+   var Node = F2(function (a,b) {    return {ctor: "Node",_0: a,_1: b};});
+   var nodes = Node(_U.list([]));
+   var Text = F2(function (a,b) {    return {ctor: "Text",_0: a,_1: b};});
+   var text = function (val) {    return A2(Text,_U.list([]),val);};
+   var withStyle = F2(function (attr,node) {
+      var _p3 = node;
+      if (_p3.ctor === "Text") {
+            return A2(Text,A2($List._op["::"],attr,_p3._0),_p3._1);
+         } else {
+            return A2(Node,A2($List._op["::"],attr,_p3._0),_p3._1);
+         }
+   });
+   var Margin = function (a) {    return {ctor: "Margin",_0: a};};
+   var gridCol = function (val) {    return A2(withStyle,Margin(Rem(1)),nodes(_U.list([text(val)])));};
+   var gridRow = F2(function (columns,obj) {    return nodes(A2($List.map,gridCol,A2($List.map,F2(function (x,y) {    return y(x);})(obj),columns)));});
+   var grid = F2(function (columns,data) {    return render(A2(withStyle,Margin(Rem(1)),nodes(A2($List.map,gridRow(columns),data))));});
+   var Padding = function (a) {    return {ctor: "Padding",_0: a};};
+   return _elm.Grid.values = {_op: _op,grid: grid};
+};
 Elm.Model = Elm.Model || {};
 Elm.Model.make = function (_elm) {
    "use strict";
@@ -10335,6 +10392,7 @@ Elm.Main.make = function (_elm) {
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
+   $Grid = Elm.Grid.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
    $List = Elm.List.make(_elm),
@@ -10355,8 +10413,21 @@ Elm.Main.make = function (_elm) {
            ,{ctor: "_Tuple2",_0: "justifyContent",_1: "center"}
            ,{ctor: "_Tuple2",_0: "alignItems",_1: "center"}]))))]),
    _U.list([$Html.text("ackermansoftware.com")]));
-   var foodColumn = function (val) {
-      return A2($Html.span,_U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "width",_1: "20%"}]))]),_U.list([$Html.text(val)]));
+   var foodsList = function (_p0) {
+      var _p1 = _p0;
+      return A2($Grid.grid,
+      _U.list([function (_p2) {
+                 var _p3 = _p2;
+                 return $Model.name(_p3.food);
+              }
+              ,function (_p4) {
+                 var _p5 = _p4;
+                 return $Basics.toString($Model.amount(_p5.food));
+              }
+              ,function (instance) {
+                 return $Basics.toString($Model.calories(instance));
+              }]),
+      _p1.foods);
    };
    var update = F2(function (a,m) {    return m;});
    var Not = {ctor: "Not"};
@@ -10370,21 +10441,12 @@ Elm.Main.make = function (_elm) {
                                ,{food: chickenBreast,amount: $Model.Grams(100)}
                                ,{food: burritoBowl,amount: $Model.Ounces(8)}])
                ,currentMonth: "March"};
+   var main = foodsList(model);
    var row = F2(function (color,inner) {
       return A2($Html.div,
       _U.list([$Html$Attributes.style(A2($Basics._op["++"],_U.list([{ctor: "_Tuple2",_0: "backgroundColor",_1: color}]),$Styles.mediumPadding))]),
       inner);
    });
-   var foodItem = function (foodInstance) {
-      return A2(row,
-      $Styles.white,
-      _U.list([A2($Html.div,
-      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "display",_1: "flex"},{ctor: "_Tuple2",_0: "justifyContent",_1: "space-between"}]))]),
-      _U.list([foodColumn($Model.name(foodInstance.food))
-              ,foodColumn($Basics.toString($Model.amount(foodInstance.food)))
-              ,foodColumn($Basics.toString($Model.calories(foodInstance)))]))]));
-   };
-   var foodsList = function (model) {    return A2($Html.div,_U.list([]),A2($List.map,foodItem,model.foods));};
    var calendarMonthChooser = function (model) {
       return A2(row,
       $Styles.white,
@@ -10398,7 +10460,6 @@ Elm.Main.make = function (_elm) {
       _U.list([A2(row,$Styles.primary,_U.list([$Html.text("Health Tracker")])),calendarMonthChooser(m),foodsList(m)]));
    };
    var container = function (m) {    return A2($Html.div,_U.list([$Html$Attributes.style($Styles.containerStyle)]),_U.list([content(m),footer]));};
-   var main = A2($Html.div,_U.list([$Html$Attributes.style($Styles.pageStyle)]),_U.list([container(model)]));
    return _elm.Main.values = {_op: _op
                              ,row: row
                              ,groundBeef: groundBeef
@@ -10414,8 +10475,6 @@ Elm.Main.make = function (_elm) {
                              ,container: container
                              ,content: content
                              ,foodsList: foodsList
-                             ,foodItem: foodItem
-                             ,foodColumn: foodColumn
                              ,calendarMonthChooser: calendarMonthChooser
                              ,footer: footer};
 };
