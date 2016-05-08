@@ -18,6 +18,8 @@ import Foods exposing (..)
 import Components.List exposing (..)
 import Components.Header exposing (..)
 
+import Debug
+
 parseHttpError : Http.Error -> String
 parseHttpError error =
   case error of
@@ -90,8 +92,8 @@ dashboard model =
     [ Link "Home" "/"
     , Link "Settings" "/settings"
     ]
-    [ Html.text "blah" ]
-
+    [ foodsList model ]
+{-
 foodsList : Model -> Node
 foodsList {db, foodLog} =
   let foods = Maybe.withDefault [] (Maybe.map .foods foodLog)
@@ -102,8 +104,21 @@ foodsList {db, foodLog} =
                              , subText = toString (calories db eaten)
                              , minorText = toString eaten.food.amount }
   in card [ list (List.map toItem (inflate db foods)) ]
+-}
 
+foodsList : Model -> Html
+foodsList {db, foodLog} =
+  let foods = inflatedFoods foodLog db
+  in list (List.map food foods)
 
+food : (EatenFood, Food) -> ListItem
+food (eaten, food) =
+  { icon = Avatar
+  , title = food.name
+  , body = toString eaten.food.amount
+  , secondaryIcon = Star
+  }
+{-
 foodsGrid : Model -> Node
 foodsGrid {db, foodLog} =
   let foods = Maybe.withDefault [] (Maybe.map .foods foodLog)
@@ -112,3 +127,9 @@ foodsGrid {db, foodLog} =
                 , { name = "Calories", fn = (\(eaten, food) -> toString <| calories db eaten) }
                 ]
   in card [ grid columns (inflate db foods) ]
+-}
+
+inflatedFoods : Maybe FoodLog -> FoodDB -> List (EatenFood, Food)
+inflatedFoods maybeFoodLog db =
+  let foods = Maybe.withDefault [] (Maybe.map .foods maybeFoodLog)
+  in inflate db foods

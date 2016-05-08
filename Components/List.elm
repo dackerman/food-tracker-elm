@@ -1,55 +1,67 @@
 module Components.List
-  ( Icon(..)
+  ( ListIcon(..)
+  , Icon(..)
+  , ListItem
   , list
   ) where
 
-import Styles exposing (..)
-import List exposing (map, length)
+import Html exposing (..)
+import Html.Attributes exposing (..)
 
-type Icon = None
-          | Chicken
-          | Burrito
+import List exposing (map)
+
+import Debug
+
+type ListIcon = NoListIcon
+              | Avatar
+
+type Icon = NoIcon
+          | Star
 
 type alias ListItem =
-  { icon : Icon
-  , mainText : String
-  , subText : String
-  , minorText : String
+  { icon : ListIcon
+  , title : String
+  , body : String
+  , secondaryIcon : Icon
   }
 
-list : List ListItem -> Node
+list : List ListItem -> Html
 list items =
-  items
-    |> map row
-    |> nodes
+  ul
+    [ class "mdl-list" ]
+    (map listItem items)
 
-row : ListItem -> Node
-row item =
-  let mainItem = text item.mainText
-         |> withStyles [ PaddingLeft (Px 26) ]
-  in nodes [ toIconNode item.icon
-           , mainItem
-           ]
-    |> withStyles [ Flex
-                  , AlignItems AlignCenter
-                  , PaddingTop (Px 16)
-                  , PaddingLeft (Px 24)
-                  , PaddingRight (Px 24)
-                  , PaddingBottom (Px 16)
-                  , Border [ Bottom ] (Px 1) LightGrey
-                  ]
+listItem : ListItem -> Html
+listItem item =
+  li
+    [ class "mdl-list__item mdl-list__item--three-line" ]
+    [ span
+        [ class "mdl-list__item-primary-content" ]
+        [ itemIcon item.icon
+        , span [] [ text item.title ]
+        , span
+            [ class "mdl-list__item-text-body" ]
+            [ text item.body ]
+        ]
+    , span
+        [ class "mdl-list__item-secondary-content" ]
+        [ a [ class "mdl-list__item-secondary-action" ]
+            [ secondaryIcon item.secondaryIcon ]
+        ]
+    ]
 
-toIconNode : Icon -> Node
-toIconNode icon =
-  let extraStyle =
-        case icon of
-          None -> [ BackgroundColor Grey ]
-          Chicken -> [ BackgroundImage "http://icons.iconarchive.com/icons/graphicloads/food-drink/256/chicken-icon.png"
-                     , BackgroundSize Cover ]
-          Burrito -> [ BackgroundImage "https://cdn.scratch.mit.edu/static/site/users/avatars/1445/8715.png"
-                     , BackgroundSize Cover ]
-  in nodes []
-    |> withStyles ([ Width (Px 32)
-                   , Height (Px 32)
-                   , Rounded (Pct 0.5)
-                   ] ++ extraStyle)
+secondaryIcon : Icon -> Html
+secondaryIcon icon =
+  case icon of
+    NoIcon ->
+      span [] []
+    Star ->
+      i [ class "material-icons" ] [ text "star" ]
+
+itemIcon : ListIcon -> Html
+itemIcon icon =
+  case icon of
+    Avatar ->
+      i [ class "material-icons mdl-list__item-avatar" ] [ text "avatar" ]
+    NoListIcon ->
+      span [] []

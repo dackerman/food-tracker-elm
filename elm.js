@@ -10933,44 +10933,48 @@ Elm.Components.List.make = function (_elm) {
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm),
-   $Styles = Elm.Styles.make(_elm);
+   $Signal = Elm.Signal.make(_elm);
    var _op = {};
-   var toIconNode = function (icon) {
-      var extraStyle = function () {
-         var _p0 = icon;
-         switch (_p0.ctor)
-         {case "None": return _U.list([$Styles.BackgroundColor($Styles.Grey)]);
-            case "Chicken": return _U.list([$Styles.BackgroundImage("http://icons.iconarchive.com/icons/graphicloads/food-drink/256/chicken-icon.png")
-                                           ,$Styles.BackgroundSize($Styles.Cover)]);
-            default: return _U.list([$Styles.BackgroundImage("https://cdn.scratch.mit.edu/static/site/users/avatars/1445/8715.png")
-                                    ,$Styles.BackgroundSize($Styles.Cover)]);}
-      }();
-      return A2($Styles.withStyles,
-      A2($Basics._op["++"],_U.list([$Styles.Width($Styles.Px(32)),$Styles.Height($Styles.Px(32)),$Styles.Rounded($Styles.Pct(0.5))]),extraStyle),
-      $Styles.nodes(_U.list([])));
+   var itemIcon = function (icon) {
+      var _p0 = icon;
+      if (_p0.ctor === "Avatar") {
+            return A2($Html.i,_U.list([$Html$Attributes.$class("material-icons mdl-list__item-avatar")]),_U.list([$Html.text("avatar")]));
+         } else {
+            return A2($Html.span,_U.list([]),_U.list([]));
+         }
    };
-   var row = function (item) {
-      var mainItem = A2($Styles.withStyles,_U.list([$Styles.PaddingLeft($Styles.Px(26))]),$Styles.text(item.mainText));
-      return A2($Styles.withStyles,
-      _U.list([$Styles.Flex
-              ,$Styles.AlignItems($Styles.AlignCenter)
-              ,$Styles.PaddingTop($Styles.Px(16))
-              ,$Styles.PaddingLeft($Styles.Px(24))
-              ,$Styles.PaddingRight($Styles.Px(24))
-              ,$Styles.PaddingBottom($Styles.Px(16))
-              ,A3($Styles.Border,_U.list([$Styles.Bottom]),$Styles.Px(1),$Styles.LightGrey)]),
-      $Styles.nodes(_U.list([toIconNode(item.icon),mainItem])));
+   var secondaryIcon = function (icon) {
+      var _p1 = icon;
+      if (_p1.ctor === "NoIcon") {
+            return A2($Html.span,_U.list([]),_U.list([]));
+         } else {
+            return A2($Html.i,_U.list([$Html$Attributes.$class("material-icons")]),_U.list([$Html.text("star")]));
+         }
    };
-   var list = function (items) {    return $Styles.nodes(A2($List.map,row,items));};
-   var ListItem = F4(function (a,b,c,d) {    return {icon: a,mainText: b,subText: c,minorText: d};});
-   var Burrito = {ctor: "Burrito"};
-   var Chicken = {ctor: "Chicken"};
-   var None = {ctor: "None"};
-   return _elm.Components.List.values = {_op: _op,list: list,None: None,Chicken: Chicken,Burrito: Burrito};
+   var listItem = function (item) {
+      return A2($Html.li,
+      _U.list([$Html$Attributes.$class("mdl-list__item mdl-list__item--three-line")]),
+      _U.list([A2($Html.span,
+              _U.list([$Html$Attributes.$class("mdl-list__item-primary-content")]),
+              _U.list([itemIcon(item.icon)
+                      ,A2($Html.span,_U.list([]),_U.list([$Html.text(item.title)]))
+                      ,A2($Html.span,_U.list([$Html$Attributes.$class("mdl-list__item-text-body")]),_U.list([$Html.text(item.body)]))]))
+              ,A2($Html.span,
+              _U.list([$Html$Attributes.$class("mdl-list__item-secondary-content")]),
+              _U.list([A2($Html.a,_U.list([$Html$Attributes.$class("mdl-list__item-secondary-action")]),_U.list([secondaryIcon(item.secondaryIcon)]))]))]));
+   };
+   var list = function (items) {    return A2($Html.ul,_U.list([$Html$Attributes.$class("mdl-list")]),A2($List.map,listItem,items));};
+   var ListItem = F4(function (a,b,c,d) {    return {icon: a,title: b,body: c,secondaryIcon: d};});
+   var Star = {ctor: "Star"};
+   var NoIcon = {ctor: "NoIcon"};
+   var Avatar = {ctor: "Avatar"};
+   var NoListIcon = {ctor: "NoListIcon"};
+   return _elm.Components.List.values = {_op: _op,list: list,ListItem: ListItem,NoListIcon: NoListIcon,Avatar: Avatar,NoIcon: NoIcon,Star: Star};
 };
 Elm.Foods = Elm.Foods || {};
 Elm.Foods.make = function (_elm) {
@@ -11185,14 +11189,12 @@ Elm.Main.make = function (_elm) {
    if (_elm.Main.values) return _elm.Main.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
-   $Card = Elm.Card.make(_elm),
    $Components$Header = Elm.Components.Header.make(_elm),
    $Components$List = Elm.Components.List.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Dict = Elm.Dict.make(_elm),
    $FoodJson = Elm.FoodJson.make(_elm),
    $Foods = Elm.Foods.make(_elm),
-   $Grid = Elm.Grid.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Http = Elm.Http.make(_elm),
    $Json$Decode = Elm.Json.Decode.make(_elm),
@@ -11200,47 +11202,31 @@ Elm.Main.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
-   $Styles = Elm.Styles.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
-   var foodsGrid = function (_p0) {
+   var inflatedFoods = F2(function (maybeFoodLog,db) {
+      var foods = A2($Maybe.withDefault,_U.list([]),A2($Maybe.map,function (_) {    return _.foods;},maybeFoodLog));
+      return A2($Foods.inflate,db,foods);
+   });
+   var food = function (_p0) {
       var _p1 = _p0;
-      var _p8 = _p1.db;
-      var columns = _U.list([{name: "Name",fn: function (_p2) {    var _p3 = _p2;return _p3._1.name;}}
-                            ,{name: "Amount",fn: function (_p4) {    var _p5 = _p4;return $Basics.toString(_p5._0.food.amount);}}
-                            ,{name: "Calories",fn: function (_p6) {    var _p7 = _p6;return $Basics.toString(A2($Foods.calories,_p8,_p7._0));}}]);
-      var foods = A2($Maybe.withDefault,_U.list([]),A2($Maybe.map,function (_) {    return _.foods;},_p1.foodLog));
-      return $Card.card(_U.list([A2($Grid.grid,columns,A2($Foods.inflate,_p8,foods))]));
+      return {icon: $Components$List.Avatar,title: _p1._1.name,body: $Basics.toString(_p1._0.food.amount),secondaryIcon: $Components$List.Star};
    };
-   var foodsList = function (_p9) {
-      var _p10 = _p9;
-      var _p15 = _p10.db;
-      var toItem = function (_p11) {
-         var _p12 = _p11;
-         var _p14 = _p12._1;
-         var _p13 = _p12._0;
-         return {icon: _U.eq(_p14.name,"Ground Beef") ? $Components$List.Chicken : $Components$List.Burrito
-                ,mainText: _p14.name
-                ,subText: $Basics.toString(A2($Foods.calories,_p15,_p13))
-                ,minorText: $Basics.toString(_p13.food.amount)};
-      };
-      var foods = A2($Maybe.withDefault,_U.list([]),A2($Maybe.map,function (_) {    return _.foods;},_p10.foodLog));
-      return $Card.card(_U.list([$Components$List.list(A2($List.map,toItem,A2($Foods.inflate,_p15,foods)))]));
-   };
+   var foodsList = function (_p2) {    var _p3 = _p2;var foods = A2(inflatedFoods,_p3.foodLog,_p3.db);return $Components$List.list(A2($List.map,food,foods));};
    var dashboard = function (model) {
       return A3($Components$Header.fixedHeaderLayout,
       "Food Log",
       _U.list([A2($Components$Header.Link,"Home","/"),A2($Components$Header.Link,"Settings","/settings")]),
-      _U.list([$Html.text("blah")]));
+      _U.list([foodsList(model)]));
    };
    var view = function (model) {    return !_U.eq(model.error,"") ? $Html.text(model.error) : dashboard(model);};
    var update = F2(function (action,model) {
-      var _p16 = action;
-      switch (_p16.ctor)
+      var _p4 = action;
+      switch (_p4.ctor)
       {case "Noop": return model;
-         case "ShowError": return _U.update(model,{error: _p16._0});
-         case "UpdateDB": return _U.update(model,{db: _p16._0});
-         default: return _U.update(model,{foodLog: $Maybe.Just(_p16._0)});}
+         case "ShowError": return _U.update(model,{error: _p4._0});
+         case "UpdateDB": return _U.update(model,{db: _p4._0});
+         default: return _U.update(model,{foodLog: $Maybe.Just(_p4._0)});}
    });
    var emptyModel = {error: "",db: $Dict.empty,foodLog: $Maybe.Nothing};
    var Model = F3(function (a,b,c) {    return {error: a,db: b,foodLog: c};});
@@ -11251,22 +11237,22 @@ Elm.Main.make = function (_elm) {
    var actionMailbox = $Signal.mailbox(Noop);
    var main = A2($Signal.map,view,A3($Signal.foldp,update,emptyModel,actionMailbox.signal));
    var parseHttpError = function (error) {
-      var _p17 = error;
-      switch (_p17.ctor)
+      var _p5 = error;
+      switch (_p5.ctor)
       {case "Timeout": return "timeout";
          case "NetworkError": return "network error";
-         case "UnexpectedPayload": return _p17._0;
-         default: return A2($Basics._op["++"],$Basics.toString(_p17._0),A2($Basics._op["++"],": ",_p17._1));}
+         case "UnexpectedPayload": return _p5._0;
+         default: return A2($Basics._op["++"],$Basics.toString(_p5._0),A2($Basics._op["++"],": ",_p5._1));}
    };
    var httpTask = F3(function (endpoint,decoder,onSuccess) {
       return A2($Task.onError,
       A2($Task.andThen,
       A2($Task.mapError,parseHttpError,A2($Http.get,decoder,A2($Basics._op["++"],"http://localhost:3000",endpoint))),
-      function (_p18) {
-         return A2($Signal.send,actionMailbox.address,onSuccess(_p18));
+      function (_p6) {
+         return A2($Signal.send,actionMailbox.address,onSuccess(_p6));
       }),
-      function (_p19) {
-         return A2($Signal.send,actionMailbox.address,ShowError(_p19));
+      function (_p7) {
+         return A2($Signal.send,actionMailbox.address,ShowError(_p7));
       });
    });
    var foodRequests = Elm.Native.Task.make(_elm).perform(A3(httpTask,"/foods",$FoodJson.parseFoodDB,UpdateDB));
@@ -11286,5 +11272,6 @@ Elm.Main.make = function (_elm) {
                              ,view: view
                              ,dashboard: dashboard
                              ,foodsList: foodsList
-                             ,foodsGrid: foodsGrid};
+                             ,food: food
+                             ,inflatedFoods: inflatedFoods};
 };
