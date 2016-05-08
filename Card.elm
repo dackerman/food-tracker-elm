@@ -8,7 +8,7 @@ card : List Node -> Node
 card contents =
   contents
     |> nodes
-    |> withStyles [ Padding (Px 24)
-                  , Rounded (Px 2)
+    |> withStyles [ Rounded (Px 2)
                   , Elevation 4
-                  , Margin (Px 24)]
+                  , Margin (Px 24)
+                  , Border [ Top ] (Px 1) LightGrey]

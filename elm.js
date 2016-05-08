@@ -10695,53 +10695,78 @@ Elm.Styles.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
-   var hStyle = $Html$Attributes.style;
+   var bgImgStr = function (url) {    return A2($Basics._op["++"],"url(",A2($Basics._op["++"],url,")"));};
+   var bgSizeStr = function (size) {    var _p0 = size;return "cover";};
+   var colorStr = function (color) {    var _p1 = color;if (_p1.ctor === "Grey") {    return "#888";} else {    return "#eee";}};
    var elevationStr = function (dist) {
-      var radius = dist * 2;
-      return A2($Basics._op["++"],
-      "0px ",
-      A2($Basics._op["++"],$Basics.toString(dist),A2($Basics._op["++"],"px ",A2($Basics._op["++"],$Basics.toString(radius),"px rgba(0,0,0,0.2)"))));
+      var heightPx = $Basics.toString($Basics.toFloat(dist) / 2);
+      return A2($Basics._op["++"],"0px ",A2($Basics._op["++"],heightPx,A2($Basics._op["++"],"px ",A2($Basics._op["++"],heightPx,"px rgba(0,0,0,0.2)"))));
+   };
+   var borderDirectionStr = function (direction) {
+      var _p2 = direction;
+      switch (_p2.ctor)
+      {case "Top": return "border-top";
+         case "Bottom": return "border-bottom";
+         case "Left": return "border-left";
+         case "Right": return "border-right";
+         default: return "border";}
    };
    var alignStr = function (direction) {
-      var _p0 = direction;
-      switch (_p0.ctor)
-      {case "Top": return "top";
-         case "Center": return "center";
+      var _p3 = direction;
+      switch (_p3.ctor)
+      {case "AlignTop": return "top";
+         case "AlignCenter": return "center";
          default: return "bottom";}
    };
    var spacingStr = function (spacing) {
-      var _p1 = spacing;
-      if (_p1.ctor === "Px") {
-            return A2($Basics._op["++"],$Basics.toString(_p1._0),"px");
+      var _p4 = spacing;
+      if (_p4.ctor === "Px") {
+            return A2($Basics._op["++"],$Basics.toString(_p4._0),"px");
          } else {
-            return A2($Basics._op["++"],$Basics.toString(_p1._0 * 100),"%");
+            return A2($Basics._op["++"],$Basics.toString(_p4._0 * 100),"%");
          }
    };
+   var borderStyles = F3(function (directions,distance,color) {
+      var borderProps = A2($Basics._op["++"],spacingStr(distance),A2($Basics._op["++"]," solid ",colorStr(color)));
+      var border = function (direction) {    return {ctor: "_Tuple2",_0: borderDirectionStr(direction),_1: borderProps};};
+      return A2($List.map,border,directions);
+   });
+   var positionStr = function (pos) {    var _p5 = pos;if (_p5.ctor === "Absolute") {    return "absolute";} else {    return "relative";}};
    var style = function (attr) {
-      var _p2 = attr;
-      switch (_p2.ctor)
-      {case "Padding": return {ctor: "_Tuple2",_0: "padding",_1: spacingStr(_p2._0)};
-         case "Margin": return {ctor: "_Tuple2",_0: "margin",_1: spacingStr(_p2._0)};
-         case "Flex": return {ctor: "_Tuple2",_0: "display",_1: "flex"};
-         case "SpaceBetween": return {ctor: "_Tuple2",_0: "justifyContent",_1: "space-between"};
-         case "AlignItems": return {ctor: "_Tuple2",_0: "alignItems",_1: alignStr(_p2._0)};
-         case "Grow": return {ctor: "_Tuple2",_0: "flex-grow",_1: $Basics.toString(_p2._0)};
-         case "Rounded": return {ctor: "_Tuple2",_0: "border-radius",_1: spacingStr(_p2._0)};
-         case "Elevation": return {ctor: "_Tuple2",_0: "box-shadow",_1: elevationStr(_p2._0)};
-         case "Width": return {ctor: "_Tuple2",_0: "width",_1: spacingStr(_p2._0)};
-         case "Height": return {ctor: "_Tuple2",_0: "height",_1: spacingStr(_p2._0)};
-         default: return {ctor: "_Tuple2",_0: "fontSize",_1: spacingStr(_p2._0)};}
+      var _p6 = attr;
+      switch (_p6.ctor)
+      {case "Padding": return _U.list([{ctor: "_Tuple2",_0: "padding",_1: spacingStr(_p6._0)}]);
+         case "PaddingLeft": return _U.list([{ctor: "_Tuple2",_0: "paddingLeft",_1: spacingStr(_p6._0)}]);
+         case "PaddingRight": return _U.list([{ctor: "_Tuple2",_0: "paddingRight",_1: spacingStr(_p6._0)}]);
+         case "PaddingTop": return _U.list([{ctor: "_Tuple2",_0: "paddingTop",_1: spacingStr(_p6._0)}]);
+         case "PaddingBottom": return _U.list([{ctor: "_Tuple2",_0: "paddingBottom",_1: spacingStr(_p6._0)}]);
+         case "Border": return A3(borderStyles,_p6._0,_p6._1,_p6._2);
+         case "Margin": return _U.list([{ctor: "_Tuple2",_0: "margin",_1: spacingStr(_p6._0)}]);
+         case "Flex": return _U.list([{ctor: "_Tuple2",_0: "display",_1: "flex"}]);
+         case "Position": return _U.list([{ctor: "_Tuple2",_0: "position",_1: positionStr(_p6._0)}]);
+         case "SpaceBetween": return _U.list([{ctor: "_Tuple2",_0: "justifyContent",_1: "space-between"}]);
+         case "AlignItems": return _U.list([{ctor: "_Tuple2",_0: "alignItems",_1: alignStr(_p6._0)}]);
+         case "Grow": return _U.list([{ctor: "_Tuple2",_0: "flex-grow",_1: $Basics.toString(_p6._0)}]);
+         case "Rounded": return _U.list([{ctor: "_Tuple2",_0: "border-radius",_1: spacingStr(_p6._0)}]);
+         case "Elevation": return _U.list([{ctor: "_Tuple2",_0: "box-shadow",_1: elevationStr(_p6._0)}]);
+         case "Width": return _U.list([{ctor: "_Tuple2",_0: "width",_1: spacingStr(_p6._0)}]);
+         case "Height": return _U.list([{ctor: "_Tuple2",_0: "height",_1: spacingStr(_p6._0)}]);
+         case "FontSize": return _U.list([{ctor: "_Tuple2",_0: "fontSize",_1: spacingStr(_p6._0)}]);
+         case "BackgroundColor": return _U.list([{ctor: "_Tuple2",_0: "backgroundColor",_1: colorStr(_p6._0)}]);
+         case "BackgroundImage": return _U.list([{ctor: "_Tuple2",_0: "backgroundImage",_1: bgImgStr(_p6._0)}]);
+         default: return _U.list([{ctor: "_Tuple2",_0: "backgroundSize",_1: bgSizeStr(_p6._0)}]);}
    };
+   var styleToAttribute = function (styles) {    return $Html$Attributes.style(A2($List.concatMap,style,styles));};
    var render = function (node) {
-      var _p3 = node;
-      if (_p3.ctor === "Text") {
-            if (_p3._0.ctor === "[]") {
-                  return $Html.text(_p3._1);
+      var _p7 = node;
+      if (_p7.ctor === "Text") {
+            if (_p7._0.ctor === "[]") {
+                  return $Html.text(_p7._1);
                } else {
-                  return A2($Html.div,_U.list([hStyle(A2($List.map,style,_p3._0))]),_U.list([$Html.text(_p3._1)]));
+                  return A2($Html.div,_U.list([styleToAttribute(_p7._0)]),_U.list([$Html.text(_p7._1)]));
                }
          } else {
-            return A2($Html.div,_U.list([hStyle(A2($List.map,style,_p3._0))]),A2($List.map,render,_p3._1));
+            return A2($Html.div,_U.list([styleToAttribute(_p7._0)]),A2($List.map,render,_p7._1));
          }
    };
    var Pct = function (a) {    return {ctor: "Pct",_0: a};};
@@ -10751,14 +10776,20 @@ Elm.Styles.make = function (_elm) {
    var Text = F2(function (a,b) {    return {ctor: "Text",_0: a,_1: b};});
    var text = function (val) {    return A2(Text,_U.list([]),val);};
    var withStyle = F2(function (attr,node) {
-      var _p4 = node;
-      if (_p4.ctor === "Text") {
-            return A2(Text,A2($List._op["::"],attr,_p4._0),_p4._1);
+      var _p8 = node;
+      if (_p8.ctor === "Text") {
+            return A2(Text,A2($List._op["::"],attr,_p8._0),_p8._1);
          } else {
-            return A2(Node,A2($List._op["::"],attr,_p4._0),_p4._1);
+            return A2(Node,A2($List._op["::"],attr,_p8._0),_p8._1);
          }
    });
    var withStyles = F2(function (attrs,node) {    return A3($List.foldl,withStyle,node,attrs);});
+   var Relative = {ctor: "Relative"};
+   var Absolute = {ctor: "Absolute"};
+   var Cover = {ctor: "Cover"};
+   var BackgroundSize = function (a) {    return {ctor: "BackgroundSize",_0: a};};
+   var BackgroundImage = function (a) {    return {ctor: "BackgroundImage",_0: a};};
+   var BackgroundColor = function (a) {    return {ctor: "BackgroundColor",_0: a};};
    var Elevation = function (a) {    return {ctor: "Elevation",_0: a};};
    var Rounded = function (a) {    return {ctor: "Rounded",_0: a};};
    var FontSize = function (a) {    return {ctor: "FontSize",_0: a};};
@@ -10767,12 +10798,25 @@ Elm.Styles.make = function (_elm) {
    var Grow = function (a) {    return {ctor: "Grow",_0: a};};
    var AlignItems = function (a) {    return {ctor: "AlignItems",_0: a};};
    var SpaceBetween = {ctor: "SpaceBetween"};
+   var Position = function (a) {    return {ctor: "Position",_0: a};};
    var Flex = {ctor: "Flex"};
    var Margin = function (a) {    return {ctor: "Margin",_0: a};};
+   var Border = F3(function (a,b,c) {    return {ctor: "Border",_0: a,_1: b,_2: c};});
+   var PaddingBottom = function (a) {    return {ctor: "PaddingBottom",_0: a};};
+   var PaddingTop = function (a) {    return {ctor: "PaddingTop",_0: a};};
+   var PaddingRight = function (a) {    return {ctor: "PaddingRight",_0: a};};
+   var PaddingLeft = function (a) {    return {ctor: "PaddingLeft",_0: a};};
    var Padding = function (a) {    return {ctor: "Padding",_0: a};};
+   var All = {ctor: "All"};
+   var Right = {ctor: "Right"};
+   var Left = {ctor: "Left"};
    var Bottom = {ctor: "Bottom"};
-   var Center = {ctor: "Center"};
    var Top = {ctor: "Top"};
+   var LightGrey = {ctor: "LightGrey"};
+   var Grey = {ctor: "Grey"};
+   var AlignBottom = {ctor: "AlignBottom"};
+   var AlignCenter = {ctor: "AlignCenter"};
+   var AlignTop = {ctor: "AlignTop"};
    return _elm.Styles.values = {_op: _op
                                ,withStyle: withStyle
                                ,withStyles: withStyles
@@ -10782,8 +10826,14 @@ Elm.Styles.make = function (_elm) {
                                ,Px: Px
                                ,Pct: Pct
                                ,Padding: Padding
+                               ,PaddingLeft: PaddingLeft
+                               ,PaddingRight: PaddingRight
+                               ,PaddingTop: PaddingTop
+                               ,PaddingBottom: PaddingBottom
+                               ,Border: Border
                                ,Margin: Margin
                                ,Flex: Flex
+                               ,Position: Position
                                ,SpaceBetween: SpaceBetween
                                ,AlignItems: AlignItems
                                ,Grow: Grow
@@ -10792,9 +10842,20 @@ Elm.Styles.make = function (_elm) {
                                ,FontSize: FontSize
                                ,Rounded: Rounded
                                ,Elevation: Elevation
+                               ,BackgroundColor: BackgroundColor
+                               ,BackgroundImage: BackgroundImage
+                               ,BackgroundSize: BackgroundSize
+                               ,AlignTop: AlignTop
+                               ,AlignCenter: AlignCenter
+                               ,AlignBottom: AlignBottom
+                               ,Grey: Grey
+                               ,LightGrey: LightGrey
                                ,Top: Top
-                               ,Center: Center
-                               ,Bottom: Bottom};
+                               ,Bottom: Bottom
+                               ,Left: Left
+                               ,Right: Right
+                               ,All: All
+                               ,Cover: Cover};
 };
 Elm.Card = Elm.Card || {};
 Elm.Card.make = function (_elm) {
@@ -10812,10 +10873,104 @@ Elm.Card.make = function (_elm) {
    var _op = {};
    var card = function (contents) {
       return A2($Styles.withStyles,
-      _U.list([$Styles.Padding($Styles.Px(24)),$Styles.Rounded($Styles.Px(2)),$Styles.Elevation(4),$Styles.Margin($Styles.Px(24))]),
+      _U.list([$Styles.Rounded($Styles.Px(2))
+              ,$Styles.Elevation(4)
+              ,$Styles.Margin($Styles.Px(24))
+              ,A3($Styles.Border,_U.list([$Styles.Top]),$Styles.Px(1),$Styles.LightGrey)]),
       $Styles.nodes(contents));
    };
    return _elm.Card.values = {_op: _op,card: card};
+};
+Elm.Components = Elm.Components || {};
+Elm.Components.Header = Elm.Components.Header || {};
+Elm.Components.Header.make = function (_elm) {
+   "use strict";
+   _elm.Components = _elm.Components || {};
+   _elm.Components.Header = _elm.Components.Header || {};
+   if (_elm.Components.Header.values) return _elm.Components.Header.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var Link = F2(function (a,b) {    return {ctor: "Link",_0: a,_1: b};});
+   var navLink = function (_p0) {
+      var _p1 = _p0;
+      return A2($Html.a,_U.list([$Html$Attributes.$class("mdl-navigation__link"),$Html$Attributes.href(_p1._1)]),_U.list([$Html.text(_p1._0)]));
+   };
+   var layoutTitle = function (title) {    return A2($Html.span,_U.list([$Html$Attributes.$class("mdl-layout-title")]),_U.list([$Html.text(title)]));};
+   var fixedHeaderLayout = F3(function (title,links,contents) {
+      return A2($Html.div,
+      _U.list([$Html$Attributes.$class("mdl-layout mdl-js-layout mdl-layout--fixed-header")]),
+      _U.list([A2($Html.header,
+              _U.list([$Html$Attributes.$class("mdl-layout__header")]),
+              _U.list([A2($Html.div,
+              _U.list([$Html$Attributes.$class("mdl-layout__header-row")]),
+              _U.list([layoutTitle(title)
+                      ,A2($Html.div,_U.list([$Html$Attributes.$class("mdl-layout-spacer")]),_U.list([]))
+                      ,A2($Html.nav,_U.list([$Html$Attributes.$class("mdl-navigation mdl-layout--large-screen-only")]),A2($List.map,navLink,links))]))]))
+              ,A2($Html.div,
+              _U.list([$Html$Attributes.$class("mdl-layout__drawer")]),
+              _U.list([layoutTitle(title),A2($Html.nav,_U.list([$Html$Attributes.$class("mdl-navigation")]),A2($List.map,navLink,links))]))
+              ,A2($Html.main$,
+              _U.list([$Html$Attributes.$class("mdl-layout__content")]),
+              _U.list([A2($Html.div,_U.list([$Html$Attributes.$class("page-content")]),contents)]))]));
+   });
+   return _elm.Components.Header.values = {_op: _op,fixedHeaderLayout: fixedHeaderLayout,Link: Link};
+};
+Elm.Components = Elm.Components || {};
+Elm.Components.List = Elm.Components.List || {};
+Elm.Components.List.make = function (_elm) {
+   "use strict";
+   _elm.Components = _elm.Components || {};
+   _elm.Components.List = _elm.Components.List || {};
+   if (_elm.Components.List.values) return _elm.Components.List.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Styles = Elm.Styles.make(_elm);
+   var _op = {};
+   var toIconNode = function (icon) {
+      var extraStyle = function () {
+         var _p0 = icon;
+         switch (_p0.ctor)
+         {case "None": return _U.list([$Styles.BackgroundColor($Styles.Grey)]);
+            case "Chicken": return _U.list([$Styles.BackgroundImage("http://icons.iconarchive.com/icons/graphicloads/food-drink/256/chicken-icon.png")
+                                           ,$Styles.BackgroundSize($Styles.Cover)]);
+            default: return _U.list([$Styles.BackgroundImage("https://cdn.scratch.mit.edu/static/site/users/avatars/1445/8715.png")
+                                    ,$Styles.BackgroundSize($Styles.Cover)]);}
+      }();
+      return A2($Styles.withStyles,
+      A2($Basics._op["++"],_U.list([$Styles.Width($Styles.Px(32)),$Styles.Height($Styles.Px(32)),$Styles.Rounded($Styles.Pct(0.5))]),extraStyle),
+      $Styles.nodes(_U.list([])));
+   };
+   var row = function (item) {
+      var mainItem = A2($Styles.withStyles,_U.list([$Styles.PaddingLeft($Styles.Px(26))]),$Styles.text(item.mainText));
+      return A2($Styles.withStyles,
+      _U.list([$Styles.Flex
+              ,$Styles.AlignItems($Styles.AlignCenter)
+              ,$Styles.PaddingTop($Styles.Px(16))
+              ,$Styles.PaddingLeft($Styles.Px(24))
+              ,$Styles.PaddingRight($Styles.Px(24))
+              ,$Styles.PaddingBottom($Styles.Px(16))
+              ,A3($Styles.Border,_U.list([$Styles.Bottom]),$Styles.Px(1),$Styles.LightGrey)]),
+      $Styles.nodes(_U.list([toIconNode(item.icon),mainItem])));
+   };
+   var list = function (items) {    return $Styles.nodes(A2($List.map,row,items));};
+   var ListItem = F4(function (a,b,c,d) {    return {icon: a,mainText: b,subText: c,minorText: d};});
+   var Burrito = {ctor: "Burrito"};
+   var Chicken = {ctor: "Chicken"};
+   var None = {ctor: "None"};
+   return _elm.Components.List.values = {_op: _op,list: list,None: None,Chicken: Chicken,Burrito: Burrito};
 };
 Elm.Foods = Elm.Foods || {};
 Elm.Foods.make = function (_elm) {
@@ -10998,7 +11153,7 @@ Elm.Grid.make = function (_elm) {
    var gridRow = F2(function (columns,obj) {
       var pct = 1.0 / $Basics.toFloat($List.length(columns));
       return A2($Styles.withStyles,
-      _U.list([$Styles.Flex,$Styles.SpaceBetween,$Styles.AlignItems($Styles.Center),$Styles.Height($Styles.Px(48))]),
+      _U.list([$Styles.Flex,$Styles.SpaceBetween,$Styles.AlignItems($Styles.AlignCenter),$Styles.Height($Styles.Px(48))]),
       $Styles.nodes(A2($List.map,
       function (_p0) {
          var _p1 = _p0;
@@ -11009,12 +11164,16 @@ Elm.Grid.make = function (_elm) {
    var headerRow = function (columns) {
       var pct = 1.0 / $Basics.toFloat($List.length(columns));
       return A2($Styles.withStyles,
-      _U.list([$Styles.Flex,$Styles.SpaceBetween,$Styles.AlignItems($Styles.Center),$Styles.Height($Styles.Px(48))]),
+      _U.list([$Styles.Flex,$Styles.SpaceBetween,$Styles.AlignItems($Styles.AlignCenter),$Styles.Height($Styles.Px(56))]),
       $Styles.nodes(A2($List.map,function (_p2) {    var _p3 = _p2;return A2($Styles.withStyle,$Styles.Width($Styles.Pct(pct)),gridCol(_p3.name));},columns)));
    };
+   var cardHeader = function (title) {
+      return A2($Styles.withStyles,
+      _U.list([$Styles.Flex,$Styles.AlignItems($Styles.AlignCenter),$Styles.Height($Styles.Px(64))]),
+      $Styles.nodes(_U.list([$Styles.text(title)])));
+   };
    var grid = F2(function (columns,data) {
-      var rows = A2($List._op["::"],headerRow(columns),A2($List.map,gridRow(columns),data));
-      return $Styles.nodes(rows);
+      return $Styles.nodes(A2($List.append,_U.list([cardHeader("Food Log"),headerRow(columns)]),A2($List.map,gridRow(columns),data)));
    });
    var ColumnDef = F2(function (a,b) {    return {name: a,fn: b};});
    return _elm.Grid.values = {_op: _op,grid: grid};
@@ -11027,6 +11186,8 @@ Elm.Main.make = function (_elm) {
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Card = Elm.Card.make(_elm),
+   $Components$Header = Elm.Components.Header.make(_elm),
+   $Components$List = Elm.Components.List.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Dict = Elm.Dict.make(_elm),
    $FoodJson = Elm.FoodJson.make(_elm),
@@ -11042,7 +11203,7 @@ Elm.Main.make = function (_elm) {
    $Styles = Elm.Styles.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
-   var foodsList = function (_p0) {
+   var foodsGrid = function (_p0) {
       var _p1 = _p0;
       var _p8 = _p1.db;
       var columns = _U.list([{name: "Name",fn: function (_p2) {    var _p3 = _p2;return _p3._1.name;}}
@@ -11051,17 +11212,37 @@ Elm.Main.make = function (_elm) {
       var foods = A2($Maybe.withDefault,_U.list([]),A2($Maybe.map,function (_) {    return _.foods;},_p1.foodLog));
       return $Card.card(_U.list([A2($Grid.grid,columns,A2($Foods.inflate,_p8,foods))]));
    };
-   var view = function (model) {    return !_U.eq(model.error,"") ? $Html.text(model.error) : $Styles.render(foodsList(model));};
+   var foodsList = function (_p9) {
+      var _p10 = _p9;
+      var _p15 = _p10.db;
+      var toItem = function (_p11) {
+         var _p12 = _p11;
+         var _p14 = _p12._1;
+         var _p13 = _p12._0;
+         return {icon: _U.eq(_p14.name,"Ground Beef") ? $Components$List.Chicken : $Components$List.Burrito
+                ,mainText: _p14.name
+                ,subText: $Basics.toString(A2($Foods.calories,_p15,_p13))
+                ,minorText: $Basics.toString(_p13.food.amount)};
+      };
+      var foods = A2($Maybe.withDefault,_U.list([]),A2($Maybe.map,function (_) {    return _.foods;},_p10.foodLog));
+      return $Card.card(_U.list([$Components$List.list(A2($List.map,toItem,A2($Foods.inflate,_p15,foods)))]));
+   };
+   var dashboard = function (model) {
+      return A3($Components$Header.fixedHeaderLayout,
+      "Food Log",
+      _U.list([A2($Components$Header.Link,"Home","/"),A2($Components$Header.Link,"Settings","/settings")]),
+      _U.list([$Html.text("blah")]));
+   };
+   var view = function (model) {    return !_U.eq(model.error,"") ? $Html.text(model.error) : dashboard(model);};
    var update = F2(function (action,model) {
-      var _p9 = action;
-      switch (_p9.ctor)
+      var _p16 = action;
+      switch (_p16.ctor)
       {case "Noop": return model;
-         case "ShowError": return _U.update(model,{error: _p9._0});
-         case "UpdateDB": return _U.update(model,{db: _p9._0});
-         default: return _U.update(model,{foodLog: $Maybe.Just(_p9._0)});}
+         case "ShowError": return _U.update(model,{error: _p16._0});
+         case "UpdateDB": return _U.update(model,{db: _p16._0});
+         default: return _U.update(model,{foodLog: $Maybe.Just(_p16._0)});}
    });
    var emptyModel = {error: "",db: $Dict.empty,foodLog: $Maybe.Nothing};
-   var testEatenFood = {id: 8,food: {id: 1,amount: $Foods.Ounces(3)}};
    var Model = F3(function (a,b,c) {    return {error: a,db: b,foodLog: c};});
    var Noop = {ctor: "Noop"};
    var ShowError = function (a) {    return {ctor: "ShowError",_0: a};};
@@ -11070,22 +11251,22 @@ Elm.Main.make = function (_elm) {
    var actionMailbox = $Signal.mailbox(Noop);
    var main = A2($Signal.map,view,A3($Signal.foldp,update,emptyModel,actionMailbox.signal));
    var parseHttpError = function (error) {
-      var _p10 = error;
-      switch (_p10.ctor)
+      var _p17 = error;
+      switch (_p17.ctor)
       {case "Timeout": return "timeout";
          case "NetworkError": return "network error";
-         case "UnexpectedPayload": return _p10._0;
-         default: return A2($Basics._op["++"],$Basics.toString(_p10._0),A2($Basics._op["++"],": ",_p10._1));}
+         case "UnexpectedPayload": return _p17._0;
+         default: return A2($Basics._op["++"],$Basics.toString(_p17._0),A2($Basics._op["++"],": ",_p17._1));}
    };
    var httpTask = F3(function (endpoint,decoder,onSuccess) {
       return A2($Task.onError,
       A2($Task.andThen,
       A2($Task.mapError,parseHttpError,A2($Http.get,decoder,A2($Basics._op["++"],"http://localhost:3000",endpoint))),
-      function (_p11) {
-         return A2($Signal.send,actionMailbox.address,onSuccess(_p11));
+      function (_p18) {
+         return A2($Signal.send,actionMailbox.address,onSuccess(_p18));
       }),
-      function (_p12) {
-         return A2($Signal.send,actionMailbox.address,ShowError(_p12));
+      function (_p19) {
+         return A2($Signal.send,actionMailbox.address,ShowError(_p19));
       });
    });
    var foodRequests = Elm.Native.Task.make(_elm).perform(A3(httpTask,"/foods",$FoodJson.parseFoodDB,UpdateDB));
@@ -11099,10 +11280,11 @@ Elm.Main.make = function (_elm) {
                              ,ShowError: ShowError
                              ,Noop: Noop
                              ,Model: Model
-                             ,testEatenFood: testEatenFood
                              ,emptyModel: emptyModel
                              ,main: main
                              ,update: update
                              ,view: view
-                             ,foodsList: foodsList};
+                             ,dashboard: dashboard
+                             ,foodsList: foodsList
+                             ,foodsGrid: foodsGrid};
 };
