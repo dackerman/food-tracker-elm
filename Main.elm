@@ -34,11 +34,11 @@ parseHttpError error =
 port foodRequests : Task x ()
 port foodRequests =
   httpTask "/foods" parseFoodDB UpdateDB
-{-
+
 port foodLogRequests : Task x ()
 port foodLogRequests =
   httpTask "/foodLog" parseFoodLog UpdateFoodLog
--}
+
 httpTask : String -> Json.Decoder a -> (a -> Action) -> Task x ()
 httpTask endpoint decoder onSuccess =
   (Http.get decoder ("http://localhost:3000" ++ endpoint)
@@ -51,13 +51,14 @@ actionMailbox : Signal.Mailbox Action
 actionMailbox = Signal.mailbox Noop
 
 type Action = UpdateDB FoodDB
+            | UpdateFoodLog FoodLog
             | ShowError String
             | Noop
 
 type alias Model =
   { error : String
   , db : FoodDB
-  , foodLog : List EatenFood
+  , foodLog : Maybe FoodLog
   }
 
 testEatenFood : EatenFood
@@ -72,7 +73,7 @@ testEatenFood =
 emptyModel : Model
 emptyModel = { error = ""
              , db = Dict.empty
-             , foodLog = [testEatenFood] }
+             , foodLog = Nothing }
 
 main = Signal.map view (Signal.foldp update emptyModel actionMailbox.signal)
 
@@ -82,6 +83,7 @@ update action model =
     Noop -> model
     ShowError e -> { model | error = e }
     UpdateDB newDB -> { model | db = newDB }
+    UpdateFoodLog newLog -> { model | foodLog = Just newLog }
 
 view : Model -> Html
 view model = if model.error /= ""
@@ -90,8 +92,9 @@ view model = if model.error /= ""
 
 foodsList : Model -> Node
 foodsList {db, foodLog} =
-  let columns = [ { name = "Name", fn = (\(eaten, food) -> food.name) }
+  let foods = Maybe.withDefault [] (Maybe.map .foods foodLog)
+      columns = [ { name = "Name", fn = (\(eaten, food) -> food.name) }
                 , { name = "Amount", fn = (\(eaten, food) -> toString eaten.food.amount) }
                 , { name = "Calories", fn = (\(eaten, food) -> toString <| calories db eaten) }
                 ]
-  in card [ grid columns (inflate db foodLog) ]
+  in card [ grid columns (inflate db foods) ]

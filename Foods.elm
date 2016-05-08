@@ -35,6 +35,15 @@ type Measurement
 
 type alias Quantity = Float
 
+type alias FoodLog =
+  { id : Int
+  , user : Int
+  , year : Int
+  , month : Int
+  , day : Int
+  , foods : List EatenFood
+  }
+
 ratio : Measurement -> Measurement -> Float
 ratio mA mB =
   normalized mB / normalized mA

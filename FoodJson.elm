@@ -1,5 +1,6 @@
 module FoodJson
   ( parseFoodDB
+  , parseFoodLog
   ) where
 
 import Json.Decode as Json exposing
@@ -7,8 +8,7 @@ import Json.Decode as Json exposing
   , int
   , float
   , string
-  , object4
-  , object2
+  , object2, object4, object6
   , oneOf
   , tuple2
   , customDecoder)
@@ -21,6 +21,32 @@ parseFoodDB : Json.Decoder FoodDB
 parseFoodDB =
   Json.list parseFood
     |> Json.map Dict.fromList
+
+parseFoodLog : Json.Decoder FoodLog
+parseFoodLog =
+  customDecoder
+    (Json.list parseFoodLogItem)
+      (\lst -> case List.head lst of
+                 Just first -> Ok first
+                 Nothing -> Err "Food log doesn't exist")
+
+parseFoodLogItem : Json.Decoder FoodLog
+parseFoodLogItem =
+  object6
+    FoodLog
+    ("id" := int)
+    ("user" := int)
+    ("year" := int)
+    ("month" := int)
+    ("day" := int)
+    ("foods" := Json.list parseEatenFood)
+
+parseEatenFood : Json.Decoder EatenFood
+parseEatenFood =
+  object2
+    EatenFood
+    ("id" := int)
+    ("food" := parseFoodRef)
 
 parseFood : Json.Decoder (Int, Food)
 parseFood =

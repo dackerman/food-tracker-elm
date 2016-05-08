@@ -75,14 +75,20 @@
       "day": 7,
       "foods": [
         {
-          "foodId": 6,
-          "amount": 1,
-          "units": "container"
+          "id": 1,
+          "food": {
+            "id": 6,
+            "amount": 1,
+            "units": "container"
+          }
         },
         {
-          "foodId": 1,
-          "amount": 10,
-          "units": "ounces"
+          "id": 2,
+          "food": {
+            "id": 1,
+            "amount": 10,
+            "units": "ounces"
+          }
         }
       ]
     }

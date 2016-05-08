@@ -10873,6 +10873,7 @@ Elm.Foods.make = function (_elm) {
       var maybeFood = A2(lookup,db,eaten.food);
       return A2($Maybe.withDefault,0,A2($Maybe.map,calcCalories,maybeFood));
    });
+   var FoodLog = F6(function (a,b,c,d,e,f) {    return {id: a,user: b,year: c,month: d,day: e,foods: f};});
    var Container = function (a) {    return {ctor: "Container",_0: a};};
    var Milligrams = function (a) {    return {ctor: "Milligrams",_0: a};};
    var Grams = function (a) {    return {ctor: "Grams",_0: a};};
@@ -10894,6 +10895,7 @@ Elm.Foods.make = function (_elm) {
                               ,Grams: Grams
                               ,Milligrams: Milligrams
                               ,Container: Container
+                              ,FoodLog: FoodLog
                               ,ratio: ratio
                               ,normalized: normalized
                               ,lookup: lookup
@@ -10953,8 +10955,30 @@ Elm.FoodJson.make = function (_elm) {
       A2($Json$Decode._op[":="],"nutrition",parseNutrition));
       return A2($Json$Decode.map,indexed,food);
    }();
+   var parseEatenFood = A3($Json$Decode.object2,
+   $Foods.EatenFood,
+   A2($Json$Decode._op[":="],"id",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"food",parseFoodRef));
+   var parseFoodLogItem = A7($Json$Decode.object6,
+   $Foods.FoodLog,
+   A2($Json$Decode._op[":="],"id",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"user",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"year",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"month",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"day",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"foods",$Json$Decode.list(parseEatenFood)));
+   var parseFoodLog = A2($Json$Decode.customDecoder,
+   $Json$Decode.list(parseFoodLogItem),
+   function (lst) {
+      var _p5 = $List.head(lst);
+      if (_p5.ctor === "Just") {
+            return $Result.Ok(_p5._0);
+         } else {
+            return $Result.Err("Food log doesn\'t exist");
+         }
+   });
    var parseFoodDB = A2($Json$Decode.map,$Dict.fromList,$Json$Decode.list(parseFood));
-   return _elm.FoodJson.values = {_op: _op,parseFoodDB: parseFoodDB};
+   return _elm.FoodJson.values = {_op: _op,parseFoodDB: parseFoodDB,parseFoodLog: parseFoodLog};
 };
 Elm.Grid = Elm.Grid || {};
 Elm.Grid.make = function (_elm) {
@@ -11024,7 +11048,8 @@ Elm.Main.make = function (_elm) {
       var columns = _U.list([{name: "Name",fn: function (_p2) {    var _p3 = _p2;return _p3._1.name;}}
                             ,{name: "Amount",fn: function (_p4) {    var _p5 = _p4;return $Basics.toString(_p5._0.food.amount);}}
                             ,{name: "Calories",fn: function (_p6) {    var _p7 = _p6;return $Basics.toString(A2($Foods.calories,_p8,_p7._0));}}]);
-      return $Card.card(_U.list([A2($Grid.grid,columns,A2($Foods.inflate,_p8,_p1.foodLog))]));
+      var foods = A2($Maybe.withDefault,_U.list([]),A2($Maybe.map,function (_) {    return _.foods;},_p1.foodLog));
+      return $Card.card(_U.list([A2($Grid.grid,columns,A2($Foods.inflate,_p8,foods))]));
    };
    var view = function (model) {    return !_U.eq(model.error,"") ? $Html.text(model.error) : $Styles.render(foodsList(model));};
    var update = F2(function (action,model) {
@@ -11032,13 +11057,15 @@ Elm.Main.make = function (_elm) {
       switch (_p9.ctor)
       {case "Noop": return model;
          case "ShowError": return _U.update(model,{error: _p9._0});
-         default: return _U.update(model,{db: _p9._0});}
+         case "UpdateDB": return _U.update(model,{db: _p9._0});
+         default: return _U.update(model,{foodLog: $Maybe.Just(_p9._0)});}
    });
+   var emptyModel = {error: "",db: $Dict.empty,foodLog: $Maybe.Nothing};
    var testEatenFood = {id: 8,food: {id: 1,amount: $Foods.Ounces(3)}};
-   var emptyModel = {error: "",db: $Dict.empty,foodLog: _U.list([testEatenFood])};
    var Model = F3(function (a,b,c) {    return {error: a,db: b,foodLog: c};});
    var Noop = {ctor: "Noop"};
    var ShowError = function (a) {    return {ctor: "ShowError",_0: a};};
+   var UpdateFoodLog = function (a) {    return {ctor: "UpdateFoodLog",_0: a};};
    var UpdateDB = function (a) {    return {ctor: "UpdateDB",_0: a};};
    var actionMailbox = $Signal.mailbox(Noop);
    var main = A2($Signal.map,view,A3($Signal.foldp,update,emptyModel,actionMailbox.signal));
@@ -11062,11 +11089,13 @@ Elm.Main.make = function (_elm) {
       });
    });
    var foodRequests = Elm.Native.Task.make(_elm).perform(A3(httpTask,"/foods",$FoodJson.parseFoodDB,UpdateDB));
+   var foodLogRequests = Elm.Native.Task.make(_elm).perform(A3(httpTask,"/foodLog",$FoodJson.parseFoodLog,UpdateFoodLog));
    return _elm.Main.values = {_op: _op
                              ,parseHttpError: parseHttpError
                              ,httpTask: httpTask
                              ,actionMailbox: actionMailbox
                              ,UpdateDB: UpdateDB
+                             ,UpdateFoodLog: UpdateFoodLog
                              ,ShowError: ShowError
                              ,Noop: Noop
                              ,Model: Model
