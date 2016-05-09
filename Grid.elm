@@ -9,9 +9,17 @@ type alias ColumnDef a = { name : String, fn : a -> String }
 
 grid : List (ColumnDef a) -> List a -> Node
 grid columns data =
-  let rows = (headerRow columns) :: (map (gridRow columns) data)
-  in nodes rows
+  nodes (List.append
+           [ cardHeader "Food Log"
+           , headerRow columns ]
+           (map (gridRow columns) data))
 
+cardHeader : String -> Node
+cardHeader title =
+  nodes [text title]
+    |> withStyles [ Flex
+                  , AlignItems AlignCenter
+                  , Height (Px 64) ]
 
 headerRow : List (ColumnDef a) -> Node
 headerRow columns =
@@ -21,8 +29,8 @@ headerRow columns =
     |> nodes
     |> withStyles [ Flex
                   , SpaceBetween
-                  , AlignItems Center
-                  , Height (Px 48) ]
+                  , AlignItems AlignCenter
+                  , Height (Px 56) ]
 
 gridRow : List (ColumnDef a) -> a -> Node
 gridRow columns obj =
@@ -32,7 +40,7 @@ gridRow columns obj =
     |> nodes
     |> withStyles [ Flex
                   , SpaceBetween
-                  , AlignItems Center
+                  , AlignItems AlignCenter
                   , Height (Px 48) ]
 
 

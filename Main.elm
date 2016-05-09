@@ -15,6 +15,7 @@ import Grid exposing (..)
 import Card exposing (..)
 import FoodJson exposing (..)
 import Foods exposing (..)
+import Components.List exposing (..)
 
 parseHttpError : Http.Error -> String
 parseHttpError error =
@@ -61,15 +62,6 @@ type alias Model =
   , foodLog : Maybe FoodLog
   }
 
-testEatenFood : EatenFood
-testEatenFood =
-  { id = 8
-  , food =
-    { id = 1
-    , amount = Ounces 3
-    }
-  }
-
 emptyModel : Model
 emptyModel = { error = ""
              , db = Dict.empty
@@ -88,10 +80,26 @@ update action model =
 view : Model -> Html
 view model = if model.error /= ""
              then Html.text model.error
-             else render (foodsList model)
+             else render (dashboard model)
+
+dashboard : Model -> Node
+dashboard model =
+  foodsList model
 
 foodsList : Model -> Node
 foodsList {db, foodLog} =
+  let foods = Maybe.withDefault [] (Maybe.map .foods foodLog)
+      toItem (eaten, food) = { icon = if food.name == "Ground Beef"
+                                      then Chicken
+                                      else Burrito
+                             , mainText = food.name
+                             , subText = toString (calories db eaten)
+                             , minorText = toString eaten.food.amount }
+  in card [ list (List.map toItem (inflate db foods)) ]
+
+
+foodsGrid : Model -> Node
+foodsGrid {db, foodLog} =
   let foods = Maybe.withDefault [] (Maybe.map .foods foodLog)
       columns = [ { name = "Name", fn = (\(eaten, food) -> food.name) }
                 , { name = "Amount", fn = (\(eaten, food) -> toString eaten.food.amount) }
