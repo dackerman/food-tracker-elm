@@ -2,6 +2,7 @@ module Main where
 
 import Html exposing (div, span, Attribute, Html)
 import Html.Attributes exposing (style)
+import Html.Events exposing (onClick)
 import List exposing (concat, map, append)
 import Dict exposing (Dict)
 import Maybe exposing (Maybe(..), withDefault)
@@ -34,61 +35,110 @@ parseHttpError error =
 
 port foodRequests : Task x ()
 port foodRequests =
-  httpTask "/foods" parseFoodDB UpdateDB
+  httpTask "/foods" parseFoodDB foodDBStream
 
 port foodLogRequests : Task x ()
 port foodLogRequests =
-  httpTask "/foodLog" parseFoodLog UpdateFoodLog
+  httpTask "/foodLog" (Json.map .foods parseFoodLog) foodLogStream
 
-httpTask : String -> Json.Decoder a -> (a -> Action) -> Task x ()
-httpTask endpoint decoder onSuccess =
+httpTask : String -> Json.Decoder a -> Signal.Mailbox a -> Task x ()
+httpTask endpoint decoder mailbox =
   (Http.get decoder ("http://localhost:3000" ++ endpoint)
   |> (mapError parseHttpError))
-  `andThen` (Signal.send actionMailbox.address << onSuccess)
+  `andThen` (Signal.send mailbox.address)
   `onError` (Signal.send actionMailbox.address << ShowError)
 
 
 actionMailbox : Signal.Mailbox Action
 actionMailbox = Signal.mailbox Noop
 
+foodDBStream : Signal.Mailbox FoodDB
+foodDBStream = Signal.mailbox Dict.empty
+
+foodLogStream : Signal.Mailbox (List EatenFood)
+foodLogStream = Signal.mailbox []
+
+foodSummaryStream : Signal.Signal (List FoodSummary)
+foodSummaryStream =
+  Signal.map2 toSummary foodDBStream.signal foodLogStream.signal
+
+toSummary : FoodDB -> List EatenFood -> List FoodSummary
+toSummary db foods =
+  let summarize (eaten, food) =
+        { id = eaten.id
+        , name = food.name
+        , calories = calories db eaten
+        }
+  in List.map summarize (inflate db foods)
+
+type alias FoodSummary =
+  { id : Int
+  , name : String
+  , calories : Float
+  }
+
 type Action = UpdateDB FoodDB
             | UpdateFoodLog FoodLog
             | ShowError String
+            | AddFoodDialog
             | Noop
 
 type alias Model =
   { error : String
   , db : FoodDB
   , maybeFoodLog : Maybe FoodLog
+  , addFoodDialog : Bool
   }
 
 emptyModel : Model
 emptyModel = { error = ""
              , db = Dict.empty
-             , maybeFoodLog = Nothing }
+             , maybeFoodLog = Nothing
+             , addFoodDialog = False
+             }
 
-main = Signal.map view (Signal.foldp update emptyModel actionMailbox.signal)
+main = Signal.map2 view foodSummaryStream (Signal.foldp update emptyModel actionMailbox.signal)
 
 update : Action -> Model -> Model
 update action model =
   case action of
     Noop -> model
+    AddFoodDialog -> { model | addFoodDialog = True }
     ShowError e -> { model | error = e }
     UpdateDB newDB -> { model | db = newDB }
     UpdateFoodLog newLog -> { model | maybeFoodLog = Just newLog }
 
-view : Model -> Html
-view model = if model.error /= ""
-             then Html.text model.error
-             else render (dashboard model)
+view : List FoodSummary -> Model -> Html
+view summaries model = if model.error /= ""
+                       then Html.text model.error
+                       else render (dashboard summaries model)
 
-dashboard : Model -> Node
-dashboard model =
-  foodsList model
+dashboard : List FoodSummary -> Model -> Node
+dashboard summaries {addFoodDialog} =
+  let totalCalories =
+        List.foldl (+) 0 (List.map .calories summaries)
+      dialog = nodes [ text "Add text dialog" ]
+  in nodes [ text (toString totalCalories)
+           , node "button" [text "Add food"]
+               |> withAttr (onClick actionMailbox.address AddFoodDialog)
+           , if addFoodDialog
+             then dialog
+             else text ""
+           , foodsList2 summaries ]
 
 calcTotalCalories : FoodDB -> List EatenFood -> Float
 calcTotalCalories db foods =
   List.foldl (+) 0 (List.map (calories db) foods)
+
+foodsList2 : List FoodSummary -> Node
+foodsList2 summaries =
+  let toItem summary =
+        { icon = Chicken
+        , mainText = summary.name
+        , subText = toString summary.calories ++ " calories"
+        , minorText = ""
+        }
+  in card [ list (List.map toItem summaries) ]
 
 foodsList : Model -> Node
 foodsList {db, maybeFoodLog} =

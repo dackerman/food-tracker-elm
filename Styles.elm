@@ -8,10 +8,12 @@ module Styles
   , BackgroundSize(..)
   , FontSize(..)
   , Style
+  , withAttr
   , withStyle
   , withStyles
   , text
   , nodes
+  , node
   , render
   ) where
 
@@ -66,7 +68,7 @@ type BackgroundSize = Cover
 type Position = Absolute | Relative
 
 
-type Node = Text Style String | Node Style (List Node)
+type Node = Text Style String | Node String Style (List Html.Attribute) (List Node)
 
 
 type Distance = Px Int
@@ -74,8 +76,10 @@ type Distance = Px Int
 
 
 nodes : List Node -> Node
-nodes = Node []
+nodes = node "div"
 
+node : String -> List Node -> Node
+node ele = Node ele [] []
 
 text : String -> Node
 text val = Text [] val
@@ -176,15 +180,21 @@ withStyle : StyleAttr -> Node -> Node
 withStyle attr node =
   case node of
     Text styles val -> Text (attr :: styles) val
-    Node styles nodes -> Node (attr :: styles) nodes
+    Node ele styles attrs nodes -> Node ele (attr :: styles) attrs nodes
 
+withAttr : Html.Attribute -> Node -> Node
+withAttr attr node =
+  case node of
+    Text styles val -> node
+    Node ele styles attrs nodes -> Node ele styles (attr :: attrs) nodes
 
 render : Node -> Html
 render node =
   case node of
     Text [] val -> Html.text val
     Text styles val -> Html.div [styleToAttribute styles] [Html.text val]
-    Node styles nodes -> Html.div [styleToAttribute styles] (map render nodes)
+    Node ele styles attrs nodes ->
+      Html.node ele (styleToAttribute styles :: attrs) (map render nodes)
 
 
 styleToAttribute : Style -> Html.Attribute

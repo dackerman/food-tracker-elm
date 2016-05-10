@@ -10376,6 +10376,72 @@ Elm.Html.Attributes.make = function (_elm) {
                                         ,property: property
                                         ,attribute: attribute};
 };
+Elm.Html = Elm.Html || {};
+Elm.Html.Events = Elm.Html.Events || {};
+Elm.Html.Events.make = function (_elm) {
+   "use strict";
+   _elm.Html = _elm.Html || {};
+   _elm.Html.Events = _elm.Html.Events || {};
+   if (_elm.Html.Events.values) return _elm.Html.Events.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $VirtualDom = Elm.VirtualDom.make(_elm);
+   var _op = {};
+   var keyCode = A2($Json$Decode._op[":="],"keyCode",$Json$Decode.$int);
+   var targetChecked = A2($Json$Decode.at,_U.list(["target","checked"]),$Json$Decode.bool);
+   var targetValue = A2($Json$Decode.at,_U.list(["target","value"]),$Json$Decode.string);
+   var defaultOptions = $VirtualDom.defaultOptions;
+   var Options = F2(function (a,b) {    return {stopPropagation: a,preventDefault: b};});
+   var onWithOptions = $VirtualDom.onWithOptions;
+   var on = $VirtualDom.on;
+   var messageOn = F3(function (name,addr,msg) {    return A3(on,name,$Json$Decode.value,function (_p0) {    return A2($Signal.message,addr,msg);});});
+   var onClick = messageOn("click");
+   var onDoubleClick = messageOn("dblclick");
+   var onMouseMove = messageOn("mousemove");
+   var onMouseDown = messageOn("mousedown");
+   var onMouseUp = messageOn("mouseup");
+   var onMouseEnter = messageOn("mouseenter");
+   var onMouseLeave = messageOn("mouseleave");
+   var onMouseOver = messageOn("mouseover");
+   var onMouseOut = messageOn("mouseout");
+   var onBlur = messageOn("blur");
+   var onFocus = messageOn("focus");
+   var onSubmit = messageOn("submit");
+   var onKey = F3(function (name,addr,handler) {    return A3(on,name,keyCode,function (code) {    return A2($Signal.message,addr,handler(code));});});
+   var onKeyUp = onKey("keyup");
+   var onKeyDown = onKey("keydown");
+   var onKeyPress = onKey("keypress");
+   return _elm.Html.Events.values = {_op: _op
+                                    ,onBlur: onBlur
+                                    ,onFocus: onFocus
+                                    ,onSubmit: onSubmit
+                                    ,onKeyUp: onKeyUp
+                                    ,onKeyDown: onKeyDown
+                                    ,onKeyPress: onKeyPress
+                                    ,onClick: onClick
+                                    ,onDoubleClick: onDoubleClick
+                                    ,onMouseMove: onMouseMove
+                                    ,onMouseDown: onMouseDown
+                                    ,onMouseUp: onMouseUp
+                                    ,onMouseEnter: onMouseEnter
+                                    ,onMouseLeave: onMouseLeave
+                                    ,onMouseOver: onMouseOver
+                                    ,onMouseOut: onMouseOut
+                                    ,on: on
+                                    ,onWithOptions: onWithOptions
+                                    ,defaultOptions: defaultOptions
+                                    ,targetValue: targetValue
+                                    ,targetChecked: targetChecked
+                                    ,keyCode: keyCode
+                                    ,Options: Options};
+};
 Elm.Native.Http = {};
 Elm.Native.Http.make = function(localRuntime) {
 
@@ -10768,21 +10834,30 @@ Elm.Styles.make = function (_elm) {
                   return A2($Html.div,_U.list([styleToAttribute(_p8._0)]),_U.list([$Html.text(_p8._1)]));
                }
          } else {
-            return A2($Html.div,_U.list([styleToAttribute(_p8._0)]),A2($List.map,render,_p8._1));
+            return A3($Html.node,_p8._0,A2($List._op["::"],styleToAttribute(_p8._1),_p8._2),A2($List.map,render,_p8._3));
          }
    };
    var Pct = function (a) {    return {ctor: "Pct",_0: a};};
    var Px = function (a) {    return {ctor: "Px",_0: a};};
-   var Node = F2(function (a,b) {    return {ctor: "Node",_0: a,_1: b};});
-   var nodes = Node(_U.list([]));
+   var Node = F4(function (a,b,c,d) {    return {ctor: "Node",_0: a,_1: b,_2: c,_3: d};});
+   var node = function (ele) {    return A3(Node,ele,_U.list([]),_U.list([]));};
+   var nodes = node("div");
+   var withAttr = F2(function (attr,node) {
+      var _p9 = node;
+      if (_p9.ctor === "Text") {
+            return node;
+         } else {
+            return A4(Node,_p9._0,_p9._1,A2($List._op["::"],attr,_p9._2),_p9._3);
+         }
+   });
    var Text = F2(function (a,b) {    return {ctor: "Text",_0: a,_1: b};});
    var text = function (val) {    return A2(Text,_U.list([]),val);};
    var withStyle = F2(function (attr,node) {
-      var _p9 = node;
-      if (_p9.ctor === "Text") {
-            return A2(Text,A2($List._op["::"],attr,_p9._0),_p9._1);
+      var _p10 = node;
+      if (_p10.ctor === "Text") {
+            return A2(Text,A2($List._op["::"],attr,_p10._0),_p10._1);
          } else {
-            return A2(Node,A2($List._op["::"],attr,_p9._0),_p9._1);
+            return A4(Node,_p10._0,A2($List._op["::"],attr,_p10._1),_p10._2,_p10._3);
          }
    });
    var withStyles = F2(function (attrs,node) {    return A3($List.foldl,withStyle,node,attrs);});
@@ -10824,10 +10899,12 @@ Elm.Styles.make = function (_elm) {
    var AlignCenter = {ctor: "AlignCenter"};
    var AlignTop = {ctor: "AlignTop"};
    return _elm.Styles.values = {_op: _op
+                               ,withAttr: withAttr
                                ,withStyle: withStyle
                                ,withStyles: withStyles
                                ,text: text
                                ,nodes: nodes
+                               ,node: node
                                ,render: render
                                ,Px: Px
                                ,Pct: Pct
@@ -11163,6 +11240,7 @@ Elm.Main.make = function (_elm) {
    $Foods = Elm.Foods.make(_elm),
    $Grid = Elm.Grid.make(_elm),
    $Html = Elm.Html.make(_elm),
+   $Html$Events = Elm.Html.Events.make(_elm),
    $Http = Elm.Http.make(_elm),
    $Json$Decode = Elm.Json.Decode.make(_elm),
    $List = Elm.List.make(_elm),
@@ -11180,6 +11258,15 @@ Elm.Main.make = function (_elm) {
                             ,{name: "Calories",fn: function (_p6) {    var _p7 = _p6;return $Basics.toString(A2($Foods.calories,_p8,_p7._0));}}]);
       var foods = A2($Maybe.withDefault,_U.list([]),A2($Maybe.map,function (_) {    return _.foods;},_p1.maybeFoodLog));
       return $Card.card(_U.list([A2($Grid.grid,columns,A2($Foods.inflate,_p8,foods))]));
+   };
+   var foodsList2 = function (summaries) {
+      var toItem = function (summary) {
+         return {icon: $Components$List.Chicken
+                ,mainText: summary.name
+                ,subText: A2($Basics._op["++"],$Basics.toString(summary.calories)," calories")
+                ,minorText: ""};
+      };
+      return $Card.card(_U.list([$Components$List.list(A2($List.map,toItem,summaries))]));
    };
    var calcTotalCalories = F2(function (db,foods) {
       return A3($List.foldl,F2(function (x,y) {    return x + y;}),0,A2($List.map,$Foods.calories(db),foods));
@@ -11201,52 +11288,79 @@ Elm.Main.make = function (_elm) {
       return $Card.card(_U.list([$Styles.text(A2($Basics._op["++"],$Basics.toString(totalCalories)," total calories"))
                                 ,$Components$List.list(A2($List.map,toItem,A2($Foods.inflate,_p15,foods)))]));
    };
-   var dashboard = function (model) {    return foodsList(model);};
-   var view = function (model) {    return !_U.eq(model.error,"") ? $Html.text(model.error) : $Styles.render(dashboard(model));};
    var update = F2(function (action,model) {
       var _p16 = action;
       switch (_p16.ctor)
       {case "Noop": return model;
+         case "AddFoodDialog": return _U.update(model,{addFoodDialog: true});
          case "ShowError": return _U.update(model,{error: _p16._0});
          case "UpdateDB": return _U.update(model,{db: _p16._0});
          default: return _U.update(model,{maybeFoodLog: $Maybe.Just(_p16._0)});}
    });
-   var emptyModel = {error: "",db: $Dict.empty,maybeFoodLog: $Maybe.Nothing};
-   var Model = F3(function (a,b,c) {    return {error: a,db: b,maybeFoodLog: c};});
+   var emptyModel = {error: "",db: $Dict.empty,maybeFoodLog: $Maybe.Nothing,addFoodDialog: false};
+   var Model = F4(function (a,b,c,d) {    return {error: a,db: b,maybeFoodLog: c,addFoodDialog: d};});
    var Noop = {ctor: "Noop"};
+   var AddFoodDialog = {ctor: "AddFoodDialog"};
    var ShowError = function (a) {    return {ctor: "ShowError",_0: a};};
    var UpdateFoodLog = function (a) {    return {ctor: "UpdateFoodLog",_0: a};};
    var UpdateDB = function (a) {    return {ctor: "UpdateDB",_0: a};};
+   var FoodSummary = F3(function (a,b,c) {    return {id: a,name: b,calories: c};});
+   var toSummary = F2(function (db,foods) {
+      var summarize = function (_p17) {    var _p18 = _p17;var _p19 = _p18._0;return {id: _p19.id,name: _p18._1.name,calories: A2($Foods.calories,db,_p19)};};
+      return A2($List.map,summarize,A2($Foods.inflate,db,foods));
+   });
+   var foodLogStream = $Signal.mailbox(_U.list([]));
+   var foodDBStream = $Signal.mailbox($Dict.empty);
+   var foodSummaryStream = A3($Signal.map2,toSummary,foodDBStream.signal,foodLogStream.signal);
    var actionMailbox = $Signal.mailbox(Noop);
-   var main = A2($Signal.map,view,A3($Signal.foldp,update,emptyModel,actionMailbox.signal));
+   var dashboard = F2(function (summaries,_p20) {
+      var _p21 = _p20;
+      var dialog = $Styles.nodes(_U.list([$Styles.text("Add text dialog")]));
+      var totalCalories = A3($List.foldl,F2(function (x,y) {    return x + y;}),0,A2($List.map,function (_) {    return _.calories;},summaries));
+      return $Styles.nodes(_U.list([$Styles.text($Basics.toString(totalCalories))
+                                   ,A2($Styles.withAttr,
+                                   A2($Html$Events.onClick,actionMailbox.address,AddFoodDialog),
+                                   A2($Styles.node,"button",_U.list([$Styles.text("Add food")])))
+                                   ,_p21.addFoodDialog ? dialog : $Styles.text("")
+                                   ,foodsList2(summaries)]));
+   });
+   var view = F2(function (summaries,model) {    return !_U.eq(model.error,"") ? $Html.text(model.error) : $Styles.render(A2(dashboard,summaries,model));});
+   var main = A3($Signal.map2,view,foodSummaryStream,A3($Signal.foldp,update,emptyModel,actionMailbox.signal));
    var parseHttpError = function (error) {
-      var _p17 = error;
-      switch (_p17.ctor)
+      var _p22 = error;
+      switch (_p22.ctor)
       {case "Timeout": return "timeout";
          case "NetworkError": return "network error";
-         case "UnexpectedPayload": return _p17._0;
-         default: return A2($Basics._op["++"],$Basics.toString(_p17._0),A2($Basics._op["++"],": ",_p17._1));}
+         case "UnexpectedPayload": return _p22._0;
+         default: return A2($Basics._op["++"],$Basics.toString(_p22._0),A2($Basics._op["++"],": ",_p22._1));}
    };
-   var httpTask = F3(function (endpoint,decoder,onSuccess) {
+   var httpTask = F3(function (endpoint,decoder,mailbox) {
       return A2($Task.onError,
       A2($Task.andThen,
       A2($Task.mapError,parseHttpError,A2($Http.get,decoder,A2($Basics._op["++"],"http://localhost:3000",endpoint))),
-      function (_p18) {
-         return A2($Signal.send,actionMailbox.address,onSuccess(_p18));
-      }),
-      function (_p19) {
-         return A2($Signal.send,actionMailbox.address,ShowError(_p19));
+      $Signal.send(mailbox.address)),
+      function (_p23) {
+         return A2($Signal.send,actionMailbox.address,ShowError(_p23));
       });
    });
-   var foodRequests = Elm.Native.Task.make(_elm).perform(A3(httpTask,"/foods",$FoodJson.parseFoodDB,UpdateDB));
-   var foodLogRequests = Elm.Native.Task.make(_elm).perform(A3(httpTask,"/foodLog",$FoodJson.parseFoodLog,UpdateFoodLog));
+   var foodRequests = Elm.Native.Task.make(_elm).perform(A3(httpTask,"/foods",$FoodJson.parseFoodDB,foodDBStream));
+   var foodLogRequests = Elm.Native.Task.make(_elm).perform(A3(httpTask,
+   "/foodLog",
+   A2($Json$Decode.map,function (_) {    return _.foods;},$FoodJson.parseFoodLog),
+   foodLogStream));
    return _elm.Main.values = {_op: _op
                              ,parseHttpError: parseHttpError
                              ,httpTask: httpTask
                              ,actionMailbox: actionMailbox
+                             ,foodDBStream: foodDBStream
+                             ,foodLogStream: foodLogStream
+                             ,foodSummaryStream: foodSummaryStream
+                             ,toSummary: toSummary
+                             ,FoodSummary: FoodSummary
                              ,UpdateDB: UpdateDB
                              ,UpdateFoodLog: UpdateFoodLog
                              ,ShowError: ShowError
+                             ,AddFoodDialog: AddFoodDialog
                              ,Noop: Noop
                              ,Model: Model
                              ,emptyModel: emptyModel
@@ -11255,6 +11369,7 @@ Elm.Main.make = function (_elm) {
                              ,view: view
                              ,dashboard: dashboard
                              ,calcTotalCalories: calcTotalCalories
+                             ,foodsList2: foodsList2
                              ,foodsList: foodsList
                              ,foodsGrid: foodsGrid};
 };
