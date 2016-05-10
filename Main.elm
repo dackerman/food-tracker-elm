@@ -1,6 +1,6 @@
 module Main where
 
-import Html exposing (text, div, span, Attribute, Html)
+import Html exposing (div, span, Attribute, Html)
 import Html.Attributes exposing (style)
 import List exposing (concat, map, append)
 import Dict exposing (Dict)
@@ -59,13 +59,13 @@ type Action = UpdateDB FoodDB
 type alias Model =
   { error : String
   , db : FoodDB
-  , foodLog : Maybe FoodLog
+  , maybeFoodLog : Maybe FoodLog
   }
 
 emptyModel : Model
 emptyModel = { error = ""
              , db = Dict.empty
-             , foodLog = Nothing }
+             , maybeFoodLog = Nothing }
 
 main = Signal.map view (Signal.foldp update emptyModel actionMailbox.signal)
 
@@ -75,7 +75,7 @@ update action model =
     Noop -> model
     ShowError e -> { model | error = e }
     UpdateDB newDB -> { model | db = newDB }
-    UpdateFoodLog newLog -> { model | foodLog = Just newLog }
+    UpdateFoodLog newLog -> { model | maybeFoodLog = Just newLog }
 
 view : Model -> Html
 view model = if model.error /= ""
@@ -86,21 +86,27 @@ dashboard : Model -> Node
 dashboard model =
   foodsList model
 
+calcTotalCalories : FoodDB -> List EatenFood -> Float
+calcTotalCalories db foods =
+  List.foldl (+) 0 (List.map (calories db) foods)
+
 foodsList : Model -> Node
-foodsList {db, foodLog} =
-  let foods = Maybe.withDefault [] (Maybe.map .foods foodLog)
+foodsList {db, maybeFoodLog} =
+  let foods = Maybe.withDefault [] (Maybe.map .foods maybeFoodLog)
+      totalCalories = calcTotalCalories db foods
       toItem (eaten, food) = { icon = if food.name == "Ground Beef"
                                       then Chicken
                                       else Burrito
                              , mainText = food.name
-                             , subText = toString (calories db eaten)
+                             , subText = toString (calories db eaten) ++ " calories"
                              , minorText = toString eaten.food.amount }
-  in card [ list (List.map toItem (inflate db foods)) ]
+  in card [ text (toString totalCalories ++ " total calories")
+          , list (List.map toItem (inflate db foods)) ]
 
 
 foodsGrid : Model -> Node
-foodsGrid {db, foodLog} =
-  let foods = Maybe.withDefault [] (Maybe.map .foods foodLog)
+foodsGrid {db, maybeFoodLog} =
+  let foods = Maybe.withDefault [] (Maybe.map .foods maybeFoodLog)
       columns = [ { name = "Name", fn = (\(eaten, food) -> food.name) }
                 , { name = "Amount", fn = (\(eaten, food) -> toString eaten.food.amount) }
                 , { name = "Calories", fn = (\(eaten, food) -> toString <| calories db eaten) }

@@ -6,6 +6,8 @@ module Styles
   , Color(..)
   , Direction(..)
   , BackgroundSize(..)
+  , FontSize(..)
+  , Style
   , withStyle
   , withStyles
   , text
@@ -33,6 +35,10 @@ type Direction = Top
                | Right
                | All
 
+type FontSize = Small
+              | Normal
+              | Large
+
 type StyleAttr = Padding Distance
                | PaddingLeft Distance
                | PaddingRight Distance
@@ -47,7 +53,8 @@ type StyleAttr = Padding Distance
                | Grow Float
                | Width Distance
                | Height Distance
-               | FontSize Distance
+               | Font FontSize
+               | Color Color
                | Rounded Distance
                | Elevation Int
                | BackgroundColor Color
@@ -121,6 +128,13 @@ bgImgStr : String -> String
 bgImgStr url =
   "url(" ++ url ++ ")"
 
+fontSizeStr : FontSize -> String
+fontSizeStr size =
+  case size of
+    Small -> "10px"
+    Normal -> "12px"
+    Large -> "15px"
+
 style : StyleAttr -> List (String, String)
 style attr =
   case attr of
@@ -140,7 +154,8 @@ style attr =
     Elevation amount -> [("box-shadow", elevationStr amount)]
     Width amount -> [("width", spacingStr amount)]
     Height amount -> [("height", spacingStr amount)]
-    FontSize height -> [("fontSize", spacingStr height)]
+    Font size -> [("fontSize", fontSizeStr size)]
+    Color color -> [("color", colorStr color)]
     BackgroundColor color -> [("backgroundColor", colorStr color)]
     BackgroundImage img -> [("backgroundImage", bgImgStr img)]
     BackgroundSize size -> [("backgroundSize", bgSizeStr size)]

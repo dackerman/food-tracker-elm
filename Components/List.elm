@@ -23,9 +23,16 @@ list items =
     |> map row
     |> nodes
 
+subTextStyle : Style
+subTextStyle =
+  [ Font Small
+  , Color Grey
+  ]
+
 row : ListItem -> Node
 row item =
-  let mainItem = text item.mainText
+  let mainItem = nodes [ nodes [ text item.mainText ]
+                       , nodes [ text item.subText ] |> withStyles subTextStyle ]
          |> withStyles [ PaddingLeft (Px 26) ]
   in nodes [ toIconNode item.icon
            , mainItem
